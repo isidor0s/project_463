@@ -24,43 +24,51 @@ public class xmlReader {
     private int unique_word_count;
     HashMap<String, List<Integer>> termFrequencies = new HashMap<>();
 
+    // decode tag names into integers:
+    private static final int TITLE   = 0;
+    private static final int ABSTR   = 1;
+    private static final int BODY    = 2;
+    private static final int JOURNAL = 3;
+    private static final int PUBLISHER = 4;
+    private static final int AUTHORS  = 5;
+    private static final int CATEGORIES  = 6;
+
     public int getUnique_word_count() {
         return unique_word_count;
     }
-
     public void setUnique_word_count(int unique_word_count) {
         this.unique_word_count = unique_word_count;
     }
 
-    /***
-     *
+    /*** Function that takes a List of terms and Filters out Stopwords specified in the (filepath) txt file .
+     * @param filenm , filename of the file that has the stopwords
+     * @param UniqueTerms , List of words (unique)
+     * @return new Filtered List of words that excludes the stopwords
      */
-    public static List<String> FilterOutStopwords(String filepath, List<String> UniqueTerms){
+    public static List<String> FilterOutStopwords(String filenm, List<String> UniqueTerms){
         List<String> stopWords = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader("resources/Stopwords/"+filepath))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("resources/Stopwords/"+filenm ))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 stopWords.add(line.trim()); // Remove leading/trailing whitespace
             }
         } catch (IOException e) {
             e.printStackTrace();
-            // Handle potential file reading errors
         }
         //System.out.println(stopWords);
-
+        // filter out stopwords
         List<String> filteredTerms = new ArrayList<>();
         for (String w : UniqueTerms ) {
             if (!stopWords.contains(w.toLowerCase())) { // case-insensitive matching
                 filteredTerms.add(w);
             }
         }
-
         return filteredTerms;
     }
 
-    /***
-     * Function that Searches a given xml file to Find all the different terms in the file
-     * @return list of all the different words in the given xml file
+    /*** Function that Searches a given xml file to Find all the different terms in the file
+     * @param file , nxml file from our collection
+     * @return list of all the different words in the given nxml file
      */
     public static List <String> findUniqueTerms (NXMLFileReader file){
         List<String> uniqueTerms = new ArrayList<>();
@@ -121,14 +129,21 @@ public class xmlReader {
         System.out.println("- Authors: " + authors);
         System.out.println("- Categories: " + categories);
 
+        // finds the unique terms in our xmlFIle
         List <String> uniqueTermsList =findUniqueTerms(xmlFile);
 
         xmlReader xmlReader = new xmlReader();
         xmlReader.setUnique_word_count(uniqueTermsList.size());
 
+        // compute term occurrences
+
+
+
+        // prints count of unique terms
         System.out.println();
         System.out.println("--------------------------------------------------------------------");
         System.out.println("\u001B[34mUNIQUE WORDS COUNT: \u001B[0m "+uniqueTermsList.size());
         System.out.println("--------------------------------------------------------------------");
+
     }
 }
