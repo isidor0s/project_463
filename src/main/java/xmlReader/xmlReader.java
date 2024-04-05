@@ -24,6 +24,14 @@ public class xmlReader {
     private int unique_word_count;
     HashMap<String, List<Integer>> termFrequencies = new HashMap<>();
 
+    public HashMap<String, List<Integer>> getTermFrequencies() {
+        return termFrequencies;
+    }
+
+    public void setTermFrequencies(HashMap<String, List<Integer>> termFrequencies) {
+        this.termFrequencies = termFrequencies;
+    }
+
     // decode tag names into integers:
     private static final int TITLE   = 0;
     private static final int ABSTR   = 1;
@@ -108,6 +116,140 @@ public class xmlReader {
         return termsList_filtered;
     }
 
+
+    /*** Function that searches through a text(List<String>) to find the number of times a word (String) was found.
+     * @param textList , the text (tag) we want to search into
+     * @param word , the term we are searching for
+     * @return count , number of times the word was found
+     */
+    public static int countWordOccurrences_l(List<String> textList, String word) {
+        if (textList == null || word == null || textList.isEmpty() || word.isEmpty()) {
+            return 0;
+        }
+
+        int count = 0;
+        for (String text : textList) {
+            // Case-insensitive matching (optional: adjust as needed)
+            if (text.toLowerCase().contains(word)) { // Adjust for whole word search if needed
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /*** Function that searches through a text(Set<String>) to find the number of times a word (String) was found.
+     * @param textSet , the text (tag) we want to search into
+     * @param word , the term we are searching for
+     * @return count , number of times the word was found
+     */
+    public static int countWordOccurrences_s(Set<String> textSet, String word) {
+        if (textSet == null || word == null || textSet.isEmpty() || word.isEmpty()) {
+            return 0;
+        }
+
+        // Convert HashSet to List (consider efficiency for large sets)
+        List<String> textList = new ArrayList<>(textSet);
+
+        return countWordOccurrences_l(textList, word); // Reuse existing function
+    }
+
+    /*** Function that searches through a text(String) to find the number of times a word (String) was found.
+     * @param text , the text (tag) we want to search into
+     * @param word , the term we are searching for
+     * @return count , number of times the word was found
+     */
+    public static int countWordOccurrences(String text, String word) {
+        if (text == null || word == null || text.isEmpty() || word.isEmpty()) {
+            return 0;
+        }
+        // Regular expression for word boundaries (optional for whole words only)
+        String regex = "\\b" + word + "\\b";
+
+        // Split the text into words (case-insensitive)
+        String[] words = text.toLowerCase().split("\\s+");
+
+        int count = 0;
+        for (String w : words) {
+            // Case-insensitive matching
+            if (w.equalsIgnoreCase(word)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+
+
+
+    /*** Function that for each unique term, it finds
+     * the Tags in which the Term showed up, and                                                          --     --
+     * Term Frequency (inside each tag)
+     *
+     * @param uniqueTerms
+     * @param numTags , number of tags we search ( here = 7 )
+     * @param title , tag
+     * @param abstr , tag
+     * @param body , tag
+     * @param journal , tag
+     * @param publisher , tag
+     * @param authors , tag
+     * @param categories , tag
+     *
+     * */
+    public static HashMap<String, List<Integer>> compute_occurrences (List<String> uniqueTerms, int numTags, String title , String abstr ,String body,
+                                                                      String journal , String publisher, ArrayList<String> authors , HashSet<String> categories) {
+
+        HashMap<String, List<Integer>> occurrences = new HashMap<>();
+        int tag_id = 0; // the number [0-6] of the tag , e.g. : 0 - title
+        int tf = 0;     // the number of times the term was found in the tag specified by the tag_id
+
+        // given the unique terms
+        for (String w:uniqueTerms){                 // for each word
+            tag_id = 0;
+            tf     = 0;
+
+            for ( int tag=0; tag<numTags; tag++ ){  // for each tag
+                tag_id=tag;
+                switch(tag){
+                    case 0: // check title
+                        tf = countWordOccurrences(title,w);
+                        break;
+                    case 1: // check abstr
+                        tf = countWordOccurrences(abstr,w);
+                        break;
+                    case 2: // check body
+                        tf = countWordOccurrences(body,w);
+                        break;
+                    case 3: // check journal
+                        tf = countWordOccurrences(journal,w);
+                        break;
+                    case 4: // check publisher
+                        tf = countWordOccurrences(publisher,w);
+                        break;
+                    case 5: // check authors
+                        tf = countWordOccurrences_l(authors,w);
+                        break;
+                    case 6: // check categories
+                        tf = countWordOccurrences_s(categories,w);
+                        break;
+                }
+
+                List<Integer> counts = occurrences.getOrDefault(w, new ArrayList<>());
+                counts.add(tag_id);
+                counts.add(tf);
+                occurrences.put(w, counts);
+            }
+
+        }
+
+
+
+        return occurrences;
+    }
+
+
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
 
         File example = new File("resources/MiniCollection/diagnosis/Topic_1/0/1852545.nxml");
@@ -144,6 +286,8 @@ public class xmlReader {
         System.out.println("--------------------------------------------------------------------");
         System.out.println("\u001B[34mUNIQUE WORDS COUNT: \u001B[0m "+uniqueTermsList.size());
         System.out.println("--------------------------------------------------------------------");
+        xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList,7, title , abstr , body, journal ,  publisher,  authors ,  categories));
+        System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m "+ xmlReader.getTermFrequencies());
 
     }
 }
