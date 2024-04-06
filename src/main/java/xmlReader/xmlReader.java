@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
  * (iv) Term Frequency (inside each tag)                                                                    --     --
  *
  * @author Antigoni
+ * @author Isidoros
  * 04-04-2024
  * --------------------------------------------------------
  *
@@ -270,7 +271,12 @@ public class xmlReader {
                     xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList, 7, title, abstr, body, journal, publisher, authors, categories));
 
                     // print results
-                    System.out.println("\u001B[36mTerms with Tag_id & tf for file " + file.getName() + ": \u001B[0m ");
+
+                    System.out.println("--------------------------------------------------------------------");
+                    System.out.println("\u001B[32mFile:" + file.getName()+"\u001B[0m");
+                    System.out.println("\u001B[0mUnique words: \u001B[34m" + uniqueTermsList.size());
+                    System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m ");
+                    System.out.println(xmlReader.getTermFrequencies());
 //                    int[] count = {1};
 //                    xmlReader.getTermFrequencies().forEach((key, value) -> System.out.println((count[0]++) + " " + key + " " + value));
                 } else if (file.isDirectory()) {
