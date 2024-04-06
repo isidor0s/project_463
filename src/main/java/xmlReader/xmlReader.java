@@ -3,6 +3,7 @@ import gr.uoc.csd.hy463.NXMLFileReader;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /***
  * Indexing Process:
@@ -108,12 +109,13 @@ public class xmlReader {
         //System.out.println("\nwith stopwords:  "+termsList);
         List<String> termsList_filtered = FilterOutStopwords("stopwordsEn.txt",termsList);
 
+        List<String> termsWithoutDuplicates = termsList_filtered.stream().distinct().collect(Collectors.toList());
         // Optional: Convert to lowercase for case-insensitive uniqueness
 //        for (String word : uniqueWords) {
 //            uniqueTerms.add(word.toLowerCase());
 //        }
 
-        return termsList_filtered;
+        return termsWithoutDuplicates;
     }
 
 
@@ -209,6 +211,7 @@ public class xmlReader {
         for (String w:uniqueTerms){                 // for each word
             tag_id = 0;
             tf     = 0;
+            System.out.println(w);
 
             for ( int tag=0; tag<numTags; tag++ ){  // for each tag
                 tag_id=tag;
@@ -229,17 +232,19 @@ public class xmlReader {
                         tf = countWordOccurrences(publisher,w);
                         break;
                     case 5: // check authors
-                        tf = countWordOccurrences_l(authors,w);
+                        tf = countWordOccurrences_l(authors,w); // this function is prone to error . it seems to not see the authors' names
                         break;
                     case 6: // check categories
                         tf = countWordOccurrences_s(categories,w);
                         break;
                 }
-
-                List<Integer> counts = occurrences.getOrDefault(w, new ArrayList<>());
-                counts.add(tag_id);
-                counts.add(tf);
-                occurrences.put(w, counts);
+                if(tf>0){
+                    List<Integer> counts = occurrences.getOrDefault(w, new ArrayList<>());
+                    counts.add(tag_id);
+                    counts.add(tf);
+                    occurrences.put(w, counts);
+                    System.out.println(w+"  "+counts);
+                }
             }
 
         }
@@ -273,7 +278,6 @@ public class xmlReader {
 
         // finds the unique terms in our xmlFIle
         List <String> uniqueTermsList =findUniqueTerms(xmlFile);
-
         xmlReader xmlReader = new xmlReader();
         xmlReader.setUnique_word_count(uniqueTermsList.size());
 
@@ -285,6 +289,7 @@ public class xmlReader {
         System.out.println();
         System.out.println("--------------------------------------------------------------------");
         System.out.println("\u001B[34mUNIQUE WORDS COUNT: \u001B[0m "+uniqueTermsList.size());
+        System.out.println(uniqueTermsList);
         System.out.println("--------------------------------------------------------------------");
         xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList,7, title , abstr , body, journal ,  publisher,  authors ,  categories));
         System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m "+ xmlReader.getTermFrequencies());
