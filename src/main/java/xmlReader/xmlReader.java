@@ -23,13 +23,13 @@ import java.util.stream.Collectors;
 public class xmlReader {
     // Structure that stores the terms and their info
     private int unique_word_count;
-    HashMap<String, List<Integer>> termFrequencies = new HashMap<>();
+    HashMap<String, Map<Integer,Integer>> termFrequencies = new HashMap<>();
 
-    public HashMap<String, List<Integer>> getTermFrequencies() {
+    public HashMap<String, Map<Integer,Integer>> getTermFrequencies() {
         return termFrequencies;
     }
 
-    public void setTermFrequencies(HashMap<String, List<Integer>> termFrequencies) {
+    public void setTermFrequencies(HashMap<String, Map<Integer,Integer>> termFrequencies) {
         this.termFrequencies = termFrequencies;
     }
 
@@ -200,50 +200,41 @@ public class xmlReader {
      * @param categories , tag
      *
      * */
-    public static HashMap<String, List<Integer>> compute_occurrences (List<String> uniqueTerms, int numTags, String title , String abstr ,String body,
+    public static HashMap<String, Map<Integer, Integer>> compute_occurrences (List<String> uniqueTerms, int numTags, String title , String abstr ,String body,
                                                                       String journal , String publisher, ArrayList<String> authors , HashSet<String> categories) {
 
-        HashMap<String, List<Integer>> occurrences = new HashMap<>();
+        HashMap<String, Map<Integer, Integer>> occurrences = new HashMap<>();
         int tag_id = 0; // the number [0-6] of the tag , e.g. : 0 - title
-        int tf = 0;     // the number of times the term was found in the tag specified by the tag_id
+
 
         // given the unique terms
-        for (String w:uniqueTerms){                 // for each word
-            tag_id = 0;
-            tf     = 0;
-            System.out.println(w);
-
+        for (String word:uniqueTerms){                 // for each word
+//            tag_id = 0;
+//            tf     = 0;
+            int tf; // the number of times the term was found in the tag specified by the tag_id
             for ( int tag=0; tag<numTags; tag++ ){  // for each tag
-                tag_id=tag;
-                switch(tag){
-                    case 0: // check title
-                        tf = countWordOccurrences(title,w);
-                        break;
-                    case 1: // check abstr
-                        tf = countWordOccurrences(abstr,w);
-                        break;
-                    case 2: // check body
-                        tf = countWordOccurrences(body,w);
-                        break;
-                    case 3: // check journal
-                        tf = countWordOccurrences(journal,w);
-                        break;
-                    case 4: // check publisher
-                        tf = countWordOccurrences(publisher,w);
-                        break;
-                    case 5: // check authors
-                        tf = countWordOccurrences_l(authors,w); // this function is prone to error . it seems to not see the authors' names
-                        break;
-                    case 6: // check categories
-                        tf = countWordOccurrences_s(categories,w);
-                        break;
-                }
+
+                tf = switch (tag) {
+                    case 0 -> // check title
+                            countWordOccurrences(title, word);
+                    case 1 -> // check abstr
+                            countWordOccurrences(abstr, word);
+                    case 2 -> // check body
+                            countWordOccurrences(body, word);
+                    case 3 -> // check journal
+                            countWordOccurrences(journal, word);
+                    case 4 -> // check publisher
+                            countWordOccurrences(publisher, word);
+                    case 5 -> // check authors
+                            countWordOccurrences_l(authors, word); // this function is prone to error . it seems to not see the authors' names
+                    case 6 -> // check categories
+                            countWordOccurrences_s(categories, word);
+                    default -> tf = 0 ;
+                };
                 if(tf>0){
-                    List<Integer> counts = occurrences.getOrDefault(w, new ArrayList<>());
-                    counts.add(tag_id);
-                    counts.add(tf);
-                    occurrences.put(w, counts);
-                    System.out.println(w+"  "+counts);
+                    Map<Integer,Integer> counts = occurrences.getOrDefault(word, new HashMap<>()); // get the counts of the word
+                    counts.put(tag, tf);
+                    occurrences.put(word, counts);
                 }
             }
 
@@ -292,7 +283,11 @@ public class xmlReader {
         System.out.println(uniqueTermsList);
         System.out.println("--------------------------------------------------------------------");
         xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList,7, title , abstr , body, journal ,  publisher,  authors ,  categories));
-        System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m "+ xmlReader.getTermFrequencies());
+//        System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m "+ xmlReader.getTermFrequencies());
+
+        System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m ");
+        int[] count = {1};
+        xmlReader.getTermFrequencies().forEach((key, value) -> System.out.println(( count[0]++ )+ " " + key + " " + value));
 
     }
 }
