@@ -245,49 +245,46 @@ public class xmlReader {
         return occurrences;
     }
 
+    public static void compute_occurrences_for_directory(String directoryPath) throws IOException {
+        File folder = new File(directoryPath);
+        File[] list_of_files = folder.listFiles();
 
+        if ( list_of_files != null) { //   if the directory is not empty
+            for (File file :  list_of_files) {
+                if (file.isFile() && file.getName().endsWith(".nxml")) {
+                    NXMLFileReader xmlFile = new NXMLFileReader(file);
+                    String title = xmlFile.getTitle();
+                    String abstr = xmlFile.getAbstr();
+                    String body = xmlFile.getBody();
+                    String journal = xmlFile.getJournal();
+                    String publisher = xmlFile.getPublisher();
+                    ArrayList<String> authors = xmlFile.getAuthors();
+                    HashSet<String> categories = xmlFile.getCategories();
+
+                    // finds the unique terms in our xmlFile
+                    List<String> uniqueTermsList = findUniqueTerms(xmlFile);
+                    xmlReader xmlReader = new xmlReader();
+                    xmlReader.setUnique_word_count(uniqueTermsList.size());
+
+                    // compute term occurrences
+                    xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList, 7, title, abstr, body, journal, publisher, authors, categories));
+
+                    // print results
+                    System.out.println("\u001B[36mTerms with Tag_id & tf for file " + file.getName() + ": \u001B[0m ");
+//                    int[] count = {1};
+//                    xmlReader.getTermFrequencies().forEach((key, value) -> System.out.println((count[0]++) + " " + key + " " + value));
+                } else if (file.isDirectory()) {
+                    compute_occurrences_for_directory(file.getAbsolutePath()); // recursively search subdirectories
+                }
+            }
+        } else {
+            System.out.println("No files found in the directory.");
+        }
+    }
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
 
-        File example = new File("resources/MiniCollection/diagnosis/Topic_1/0/1852545.nxml");
-        NXMLFileReader xmlFile = new NXMLFileReader(example);
-        String pmcid = xmlFile.getPMCID();
-        String title = xmlFile.getTitle();
-        String abstr = xmlFile.getAbstr();
-        String body = xmlFile.getBody();
-        String journal = xmlFile.getJournal();
-        String publisher = xmlFile.getPublisher();
-        ArrayList<String> authors = xmlFile.getAuthors();
-        HashSet<String> categories =xmlFile.getCategories();
-        System.out.println("- PMC ID: " + pmcid);
-        System.out.println("- Title: " + title);
-        System.out.println("- Abstract: " + abstr);
-        System.out.println("- Body: " + body);
-        System.out.println("- Journal: " + journal);
-        System.out.println("- Publisher: " + publisher);
-        System.out.println("- Authors: " + authors);
-        System.out.println("- Categories: " + categories);
-
-        // finds the unique terms in our xmlFIle
-        List <String> uniqueTermsList =findUniqueTerms(xmlFile);
-        xmlReader xmlReader = new xmlReader();
-        xmlReader.setUnique_word_count(uniqueTermsList.size());
-
-        // compute term occurrences
-
-
-
-        // prints count of unique terms
-        System.out.println();
-        System.out.println("--------------------------------------------------------------------");
-        System.out.println("\u001B[34mUNIQUE WORDS COUNT: \u001B[0m "+uniqueTermsList.size());
-        System.out.println(uniqueTermsList);
-        System.out.println("--------------------------------------------------------------------");
-        xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList,7, title , abstr , body, journal ,  publisher,  authors ,  categories));
-//        System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m "+ xmlReader.getTermFrequencies());
-
-        System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m ");
-        int[] count = {1};
-        xmlReader.getTermFrequencies().forEach((key, value) -> System.out.println(( count[0]++ )+ " " + key + " " + value));
-
+        // specify the directory path
+        String directoryPath = "resources/MiniCollection";
+        compute_occurrences_for_directory(directoryPath);
     }
 }
