@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
  *      Class that Reads the tags' contents of an XML file (biomedical paper) in UTF-8 encoding,
  * excluding punctuation/stopwords and Prints:
  * (i) the num of Different-Unique terms,                                                                   --check--
- * (ii) Each individual unique Term along with,                                                             --     --
- * (iii) the Tags in which the Term showed up, and                                                          --     --
- * (iv) Term Frequency (inside each tag)                                                                    --     --
+ * (ii) Each individual unique Term along with,                                                             --check--
+ * (iii) the Tags in which the Term showed up, and                                                          --check--
+ * (iv) Term Frequency (inside each tag)                                                                    --check--
  *
  * @author Antigoni
  * 04-04-2024
@@ -22,10 +22,14 @@ import java.util.stream.Collectors;
  */
 public class xmlReader {
     // Structure that stores the terms and their info
-    private int unique_word_count;
-    HashMap<String, List<Integer>> termFrequencies = new HashMap<>();
 
-    public HashMap<String, List<Integer>> getTermFrequencies() {
+    /*********************************************************************************/
+    private int unique_word_count;                                              // number of unique words in acquired doc
+    HashMap<String, Map<Integer,Integer>> termFrequencies = new HashMap<>();    // hash mapping of words with their occurrences-info (Doc_id,tf)
+    /*********************************************************************************/
+
+    //                      setters and getters :
+    public HashMap<String, Map<Integer,Integer>> getTermFrequencies() {
         return termFrequencies;
     }
 
@@ -213,6 +217,7 @@ public class xmlReader {
             tf     = 0;
             System.out.println(w);
 
+<<<<<<< Updated upstream
             for ( int tag=0; tag<numTags; tag++ ){  // for each tag
                 tag_id=tag;
                 switch(tag){
@@ -238,6 +243,25 @@ public class xmlReader {
                         tf = countWordOccurrences_s(categories,w);
                         break;
                 }
+=======
+                tf = switch (tag) {
+                    case 0 -> // check title
+                            countWordOccurrences(title, word);
+                    case 1 -> // check abstr
+                            countWordOccurrences(abstr, word);
+                    case 2 -> // check body
+                            countWordOccurrences(body, word);
+                    case 3 -> // check journal
+                            countWordOccurrences(journal, word);
+                    case 4 -> // check publisher
+                            countWordOccurrences(publisher, word);
+                    case 5 -> // check authors
+                            countWordOccurrences_l(authors, word); // this function is prone to error . it seems to not see the authors' names the way we need
+                    case 6 -> // check categories
+                            countWordOccurrences_s(categories, word);
+                    default -> tf = 0 ;
+                };
+>>>>>>> Stashed changes
                 if(tf>0){
                     List<Integer> counts = occurrences.getOrDefault(w, new ArrayList<>());
                     counts.add(tag_id);
