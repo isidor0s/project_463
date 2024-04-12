@@ -25,7 +25,8 @@ public class xmlReader {
     // Structure that stores the terms and their info
     private int unique_word_count;
     HashMap<String, Map<Integer,Integer>> termFrequencies = new HashMap<>();
-
+    static HashMap<String, List<String>> vocabulary = new HashMap<>();
+    static int count =0;
     public HashMap<String, Map<Integer,Integer>> getTermFrequencies() {
         return termFrequencies;
     }
@@ -240,9 +241,6 @@ public class xmlReader {
             }
 
         }
-
-
-
         return occurrences;
     }
 
@@ -253,6 +251,7 @@ public class xmlReader {
         if ( list_of_files != null) { //   if the directory is not empty
             for (File file :  list_of_files) {
                 if (file.isFile() && file.getName().endsWith(".nxml")) {
+                    //read the file
                     NXMLFileReader xmlFile = new NXMLFileReader(file);
                     String title = xmlFile.getTitle();
                     String abstr = xmlFile.getAbstr();
@@ -264,7 +263,14 @@ public class xmlReader {
 
                     // finds the unique terms in our xmlFile
                     List<String> uniqueTermsList = findUniqueTerms(xmlFile);
+                    for (String word: uniqueTermsList) {
+                        List<String> documents = vocabulary.getOrDefault(word, new ArrayList<>());
+                        documents.add(file.getName());
+                        vocabulary.put(word, documents);
+                    }
+
                     xmlReader xmlReader = new xmlReader();
+                    count = count + uniqueTermsList.size();
                     xmlReader.setUnique_word_count(uniqueTermsList.size());
 
                     // compute term occurrences
@@ -273,7 +279,7 @@ public class xmlReader {
                     // print results
 
                     System.out.println("--------------------------------------------------------------------");
-                    System.out.println("\u001B[32mFile:" + file.getName()+"\u001B[0m");
+                    System.out.println("\u001B[32mFile:" + file.getAbsolutePath()+"\u001B[0m");
                     System.out.println("\u001B[0mUnique words: \u001B[34m" + uniqueTermsList.size());
                     System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m ");
                     System.out.println(xmlReader.getTermFrequencies());
@@ -290,7 +296,33 @@ public class xmlReader {
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
 
         // specify the directory path
-        String directoryPath = "resources/MiniCollection";
+        String directoryPath = "resources/MiniCollection/";
         compute_occurrences_for_directory(directoryPath);
+        System.out.println("Total number of unique words in each doc found: "+ count);
+        System.out.println("Vocabulary Size: "+ vocabulary.size());
+
+
+        // Create CollectionIndex directory
+        File dir = new File("Resources/CollectionIndex");
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+
+        // Create VocabularyFile.txt
+        File vocabFile = new File(dir, "VocabularyFile.txt");
+        vocabFile.createNewFile();
+
+        // Write vocabulary to file
+        try (PrintWriter writer = new PrintWriter(new FileWriter(vocabFile))) {
+            // Sort vocabulary
+            Map<String, List<String>> sortedVocabulary = new TreeMap<>(vocabulary);
+
+            // Write each word and its document frequency to the file
+            for (Map.Entry<String, List<String>> entry : sortedVocabulary.entrySet()) {
+                writer.println(entry.getKey() + " " + entry.getValue().size());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
