@@ -243,6 +243,4 @@ public class xmlReader {
         return occurrences;
     }
 
-
-
 }

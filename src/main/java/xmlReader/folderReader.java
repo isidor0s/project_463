@@ -48,7 +48,7 @@ public class folderReader {
 
                     // compute term occurrences
                     xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList, 7, title, abstr, body, journal, publisher, authors, categories));
-                    DocList.put(file.getName().substring(0,file.getName().lastIndexOf(".")), xmlReader); // add the xmlReader object to the list
+                    DocList.put(file.getAbsolutePath(), xmlReader); // add the xmlReader object to the list
                     // print results
 
 //                    System.out.println("--------------------------------------------------------------------");
@@ -63,6 +63,54 @@ public class folderReader {
         } else {
             System.out.println("No files found in the directory.");
         }
+    }
+
+    /***
+     * Function that Computes the Length of the Normalized Document Vector .
+     * The calculation of the Document Vector is based on the TF*IDF.
+     * ----------------------------------------------------------------------------------------------------------------------
+     * (*) TF calculation :
+     *
+     * -- For each Unique Term inside a Doc,
+     * ADD all the appearances of the term through all the Tags.
+     * --------------------------------------------------------------
+     * (*) IDF calculation :
+     *
+     * log_2 ( N / df_i) , where N = all the Docs in our collection & df_i = the number of Documents that include the term i
+     * --- N = calculate_number_of_Docs_in_collection()
+     * --- df_i =
+     * -----------------------------------------------------------------------------------------------------------------------
+     */
+    public static void calculate_normalization_factor() {
+
+        // calculate the normalization factor for each document
+//        for (Map.Entry<String, xmlReader> entry : DocList.entrySet()) {
+//            xmlReader xmlReader = entry.getValue();
+//            HashMap<String, Map<Integer,Integer>> termFrequencies = xmlReader.getTermFrequencies();
+//            double normalizationFactor = 0;
+//            sum = 0;
+//            for (Map.Entry<String,Map<Integer,Integer>> term : termFrequencies.entrySet()) {
+//                for (Integer value : term.getValue()) {
+//                    sum += value;
+//                }
+//                normalizationFactor += Math.pow(term.getValue(), 2);
+//            }
+//            normalizationFactor = Math.sqrt(normalizationFactor);
+//            xmlReader.setNormalizationFactor(normalizationFactor);
+//        }
+        DocList.forEach((k,v)->{
+            double normalizationFactor = 0;
+            int sum = 0;
+            for (Map.Entry<String,Map<Integer,Integer>> term : v.getTermFrequencies().entrySet()) {
+                for (Integer value : term.getValue().values()) {
+                    sum = sum + value;
+                }
+                normalizationFactor += Math.pow(sum, 2);
+            }
+            System.out.println(k+"sum: "+sum);
+            normalizationFactor = Math.sqrt(normalizationFactor);
+//            v.setNormalizationFactor(normalizationFactor);
+        });
     }
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         long startTime = System.currentTimeMillis();
@@ -95,13 +143,16 @@ public class folderReader {
             e.printStackTrace();
         }
 
-        DocList.forEach((k,v) -> {
-            System.out.println("--------------------------------------------------------------------");
-            System.out.println("\u001B[32mFile:" + k + "\u001B[0m");
-            System.out.println("\u001B[0mUnique words: \u001B[34m" + v.getUnique_word_count());
-            System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m ");
-            System.out.println(v.getTermFrequencies());
-        });
+        // k - file
+        // v - the exact xmlReader created for this use. (incl. vocabulary)
+//        DocList.forEach((k,v) -> {
+//            System.out.println("--------------------------------------------------------------------");
+//            System.out.println("\u001B[32mFile:" + k + "\u001B[0m");
+//            System.out.println("\u001B[0mUnique words: \u001B[34m" + v.getUnique_word_count());
+//            System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m ");
+//            System.out.println(v.getTermFrequencies());
+//        });
+        calculate_normalization_factor();
         System.out.println(DocList.size());
         long endTime = System.currentTimeMillis();
         long elapsedTime = endTime - startTime;
