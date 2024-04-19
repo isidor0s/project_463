@@ -47,8 +47,9 @@ public class folderReader {
                     xmlReader.setUnique_word_count(uniqueTermsList.size());
 
                     // compute term occurrences
-                    xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList, 7, title, abstr, body, journal, publisher, authors, categories));
+                    xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList, 7, title, abstr, body, journal, publisher, authors, categories, xmlReader.getDoc_TF()));
                     DocList.put(file.getAbsolutePath(), xmlReader); // add the xmlReader object to the list
+
                     // print results
 
 //                    System.out.println("--------------------------------------------------------------------");
@@ -63,6 +64,7 @@ public class folderReader {
         } else {
             System.out.println("No files found in the directory.");
         }
+
     }
 
     /***
@@ -115,8 +117,9 @@ public class folderReader {
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         long startTime = System.currentTimeMillis();
         // specify the directory path
-        String directoryPath = "resources/77/";
+        String directoryPath = "resources/MiniCollection/diagnosis";
         compute_occurrences_for_directory(directoryPath);
+
         System.out.println("Total number of unique words in each doc found: "+ count);
         System.out.println("Vocabulary Size: "+ vocabulary.size());
 

@@ -24,8 +24,20 @@ import java.util.stream.Collectors;
 public class xmlReader {
     // Structure that stores the terms and their info
     private int unique_word_count;
-    HashMap<String, Map<Integer,Integer>> termFrequencies = new HashMap<>();
+    HashMap<String, Map<Integer,Integer>> termFrequencies = new HashMap<>(); // mapping: < word , tag_id, tf>
+
+    HashMap<String, Integer> Doc_TF = new HashMap<>(); // mapping: < word , tf> where tf is total , meaning it includes all tags
+
     static int count =0;
+
+    public HashMap<String, Integer> getDoc_TF() {
+        return Doc_TF;
+    }
+
+    public void setDoc_TF(HashMap<String, Integer> doc_TF) {
+        Doc_TF = doc_TF;
+    }
+
     public HashMap<String, Map<Integer,Integer>> getTermFrequencies() {
         return termFrequencies;
     }
@@ -33,7 +45,6 @@ public class xmlReader {
     public void setTermFrequencies(HashMap<String, Map<Integer,Integer>> termFrequencies) {
         this.termFrequencies = termFrequencies;
     }
-
     // decode tag names into integers:
     private static final int TITLE   = 0;
     private static final int ABSTR   = 1;
@@ -48,6 +59,14 @@ public class xmlReader {
     }
     public void setUnique_word_count(int unique_word_count) {
         this.unique_word_count = unique_word_count;
+    }
+
+    // constructor of the class:
+    public xmlReader(){
+        this.unique_word_count = 0;
+        this.termFrequencies = new HashMap<>();
+        this.Doc_TF = new HashMap<>();
+        this.count = 0;
     }
 
     /*** Function that takes a List of terms and Filters out Stopwords specified in the (filepath) txt file .
@@ -186,9 +205,10 @@ public class xmlReader {
 
 
 
-    /*** Function that for each unique term, it finds
+    /** Function that for each unique term, it finds
      * the Tags in which the Term showed up, and                                                          --     --
      * Term Frequency (inside each tag)
+     * Changes the value of the HashMap Doc_TF that stores the total TF for each word (incl. all tags)
      *
      * @param uniqueTerms
      * @param numTags , number of tags we search ( here = 7 )
@@ -199,14 +219,14 @@ public class xmlReader {
      * @param publisher , tag
      * @param authors , tag
      * @param categories , tag
-     *
+     * @param Doc_TF , HashMap that stores the total TF for each word (incl. all tags)
      * */
-    public static HashMap<String, Map<Integer, Integer>> compute_occurrences (List<String> uniqueTerms, int numTags, String title , String abstr ,String body,
-                                                                      String journal , String publisher, ArrayList<String> authors , HashSet<String> categories) {
+    public static HashMap<String, Map<Integer, Integer>> xml (List<String> uniqueTerms, int numTags, String title , String abstr ,String body,
+                                                                      String journal , String publisher, ArrayList<String> authors , HashSet<String> categories, HashMap<String, Integer> Doc_TF){
 
         HashMap<String, Map<Integer, Integer>> occurrences = new HashMap<>();
         int tag_id = 0; // the number [0-6] of the tag , e.g. : 0 - title
-
+        int total_TF=0;
 
         // given the unique terms
         for (String word:uniqueTerms){                 // for each word
@@ -232,14 +252,22 @@ public class xmlReader {
                             countWordOccurrences_s(categories, word);
                     default -> tf = 0 ;
                 };
+
+                // stores the individual tf for a tag
                 if(tf>0){
                     Map<Integer,Integer> counts = occurrences.getOrDefault(word, new HashMap<>()); // get the counts of the word
                     counts.put(tag, tf);
                     occurrences.put(word, counts);
                 }
+                // adds the TFs from all the tags for each word :
+                total_TF = total_TF+tf;
             }
+            // saves the total TF for each word in the HashMap of the caller function
+            Doc_TF.put(word, total_TF);
+
 
         }
+
         return occurrences;
     }
 
