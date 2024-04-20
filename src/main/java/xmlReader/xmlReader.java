@@ -24,12 +24,13 @@ import java.util.stream.Collectors;
 public class xmlReader {
     // Structure that stores the terms and their info
     private int unique_word_count;
-    HashMap<String, Map<Integer,Integer>> termFrequencies = new HashMap<>(); // mapping: < word , tag_id, tf>
+    HashMap<String, Map<Integer,Integer>> termFrequencies; // mapping: < word , tag_id, tf>
 
-    HashMap<String, Integer> Doc_TF = new HashMap<>(); // mapping: < word , tf> where tf is total , meaning it includes all tags
+    HashMap<String, Integer> Doc_TF; // mapping: < word , tf> where tf is total , meaning it includes all tags
 
     static int count =0;
 
+    // Getters and Setters
     public HashMap<String, Integer> getDoc_TF() {
         return Doc_TF;
     }
@@ -37,23 +38,14 @@ public class xmlReader {
     public void setDoc_TF(HashMap<String, Integer> doc_TF) {
         Doc_TF = doc_TF;
     }
-
+    //Getter and setters
     public HashMap<String, Map<Integer,Integer>> getTermFrequencies() {
         return termFrequencies;
     }
-
     public void setTermFrequencies(HashMap<String, Map<Integer,Integer>> termFrequencies) {
         this.termFrequencies = termFrequencies;
     }
-    // decode tag names into integers:
-    private static final int TITLE   = 0;
-    private static final int ABSTR   = 1;
-    private static final int BODY    = 2;
-    private static final int JOURNAL = 3;
-    private static final int PUBLISHER = 4;
-    private static final int AUTHORS  = 5;
-    private static final int CATEGORIES  = 6;
-
+    // Getters and Setters
     public int getUnique_word_count() {
         return unique_word_count;
     }
@@ -61,7 +53,12 @@ public class xmlReader {
         this.unique_word_count = unique_word_count;
     }
 
-    // constructor of the class:
+    /**
+     * Constructor of the class xmlReader
+     * Initializes the unique_word_count to 0
+     * Initializes the termFrequencies to an empty HashMap
+     * Doc_TF to an empty HashMap
+     */
     public xmlReader(){
         this.unique_word_count = 0;
         this.termFrequencies = new HashMap<>();

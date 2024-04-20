@@ -4,6 +4,7 @@ import gr.uoc.csd.hy463.NXMLFileReader;
 import java.io.*;
 import java.util.*;
 
+
 import static xmlReader.xmlReader.*;
 
 public class folderReader {
@@ -36,7 +37,7 @@ public class folderReader {
 
                     // finds the unique terms in our xmlFile
                     List<String> uniqueTermsList = findUniqueTerms(xmlFile);
-                    for (String word: uniqueTermsList) {
+                    for (String word: uniqueTermsList) { //Notes: put this loop inside the findUniqueTerms function
                         List<String> documents = vocabulary.getOrDefault(word, new ArrayList<>());
                         documents.add(file.getName());
                         vocabulary.put(word, documents);
@@ -85,45 +86,34 @@ public class folderReader {
      * ----------------------------------------------------------------------------------
      */
     public static void calculate_normalization_factor() {
-
-        // calculate the normalization factor for each document
-//        for (Map.Entry<String, xmlReader> entry : DocList.entrySet()) {
-//            xmlReader xmlReader = entry.getValue();
-//            HashMap<String, Map<Integer,Integer>> termFrequencies = xmlReader.getTermFrequencies();
-//            double normalizationFactor = 0;
-//            sum = 0;
-//            for (Map.Entry<String,Map<Integer,Integer>> term : termFrequencies.entrySet()) {
-//                for (Integer value : term.getValue()) {
-//                    sum += value;
-//                }
-//                normalizationFactor += Math.pow(term.getValue(), 2);
-//            }
-//            normalizationFactor = Math.sqrt(normalizationFactor);
-//            xmlReader.setNormalizationFactor(normalizationFactor);
-//        }
+        int N = DocList.size(); // number of docs in collection
+        int counter = 0;
         DocList.forEach((k,v)->{
-            double normalizationFactor = 0;
-            int sum = 0;
-            for (Map.Entry<String,Map<Integer,Integer>> term : v.getTermFrequencies().entrySet()) {
-                for (Integer value : term.getValue().values()) {
-                    sum = sum + value;
-                }
-                normalizationFactor += Math.pow(sum, 2);
+            double docLength_v = 0;
+            int df_i;           // apo to vocabulary
+            double idf_i;
+            for (Map.Entry<String,Integer> term : v.getDoc_TF().entrySet()) {
+                int tf = term.getValue();
+                String word = term.getKey();
+                df_i = vocabulary.get(word).size();
+                idf_i = (Math.log( N/df_i )/ Math.log(2));
+                double weight =  (tf * idf_i);
+                System.out.printf("%.4f , ",weight );
+                docLength_v = docLength_v + Math.pow(weight,2);
             }
-            System.out.println(k+"sum: "+sum);
-            normalizationFactor = Math.sqrt(normalizationFactor);
-//            v.setNormalizationFactor(normalizationFactor);
+            double normalizationFactor = Math.sqrt(docLength_v);
+            System.out.println("\nNormalization Factor for Doc: "+ k + " is: "+ normalizationFactor);
+
         });
     }
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         long startTime = System.currentTimeMillis();
         // specify the directory path
-        String directoryPath = "resources/MiniCollection/diagnosis";
+        String directoryPath = "resources/MiniCollection/diagnosis/Topic_1/0";
         compute_occurrences_for_directory(directoryPath);
 
         System.out.println("Total number of unique words in each doc found: "+ count);
         System.out.println("Vocabulary Size: "+ vocabulary.size());
-
 
         // Create CollectionIndex directory
         File dir = new File("Resources/CollectionIndex");
