@@ -211,17 +211,17 @@ public class xmlReader {
      * Changes the value of the HashMap Doc_TF that stores the total TF for each word (incl. all tags)
      *
      * @param uniqueTerms
-     * @param numTags , number of tags we search ( here = 7 )
-     * @param title , tag
-     * @param abstr , tag
-     * @param body , tag
-     * @param journal , tag
-     * @param publisher , tag
-     * @param authors , tag
-     * @param categories , tag
-     * @param Doc_TF , HashMap that stores the total TF for each word (incl. all tags)
+     * @param numTags  number of tags we search ( here = 7 )
+     * @param title tag
+     * @param abstr tag
+     * @param body tag
+     * @param journal tag
+     * @param publisher tag
+     * @param authors tag
+     * @param categories tag
+     * @param Doc_TF HashMap that stores the total TF for each word (incl. all tags)
      * */
-    public static HashMap<String, Map<Integer, Integer>> xml (List<String> uniqueTerms, int numTags, String title , String abstr ,String body,
+    public static HashMap<String, Map<Integer, Integer>> compute_occurrences (List<String> uniqueTerms, int numTags, String title , String abstr ,String body,
                                                                       String journal , String publisher, ArrayList<String> authors , HashSet<String> categories, HashMap<String, Integer> Doc_TF){
 
         HashMap<String, Map<Integer, Integer>> occurrences = new HashMap<>();
@@ -230,9 +230,8 @@ public class xmlReader {
 
         // given the unique terms
         for (String word:uniqueTerms){                 // for each word
-//            tag_id = 0;
-//            tf     = 0;
-            int tf; // the number of times the term was found in the tag specified by the tag_id
+            int tf=0; // the number of times the term was found in the tag specified by the tag_id
+            total_TF=0;
             for ( int tag=0; tag<numTags; tag++ ){  // for each tag
 
                 tf = switch (tag) {
@@ -252,6 +251,7 @@ public class xmlReader {
                             countWordOccurrences_s(categories, word);
                     default -> tf = 0 ;
                 };
+                //System.out.println(word+"- Tag: "+tag+" TF: "+tf);
 
                 // stores the individual tf for a tag
                 if(tf>0){
@@ -264,7 +264,7 @@ public class xmlReader {
             }
             // saves the total TF for each word in the HashMap of the caller function
             Doc_TF.put(word, total_TF);
-
+            //System.out.println(word+"- Total TF: "+total_TF);
 
         }
 

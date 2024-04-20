@@ -70,18 +70,19 @@ public class folderReader {
     /***
      * Function that Computes the Length of the Normalized Document Vector .
      * The calculation of the Document Vector is based on the TF*IDF.
-     * ----------------------------------------------------------------------------------------------------------------------
+     * ----------------------------------------------------------------------------------
      * (*) TF calculation :
      *
      * -- For each Unique Term inside a Doc,
      * ADD all the appearances of the term through all the Tags.
-     * --------------------------------------------------------------
+     * -------------------------------------------------
      * (*) IDF calculation :
      *
-     * log_2 ( N / df_i) , where N = all the Docs in our collection & df_i = the number of Documents that include the term i
+     * log_2 ( N / df_i) , where N = all the Docs in our collection
+     * &  df_i = the number of Documents that include the term i
      * --- N = calculate_number_of_Docs_in_collection()
      * --- df_i =
-     * -----------------------------------------------------------------------------------------------------------------------
+     * ----------------------------------------------------------------------------------
      */
     public static void calculate_normalization_factor() {
 
