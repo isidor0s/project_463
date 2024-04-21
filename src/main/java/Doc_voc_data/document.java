@@ -1,4 +1,4 @@
-package xmlReader;
+package Doc_voc_data;
 import gr.uoc.csd.hy463.NXMLFileReader;
 
 import java.io.*;
@@ -21,37 +21,29 @@ import java.util.stream.Collectors;
  * --------------------------------------------------------
  *
  */
-public class xmlReader {
+public class document {
     // Structure that stores the terms and their info
     private int unique_word_count;
     HashMap<String, Map<Integer,Integer>> termFrequencies; // mapping: < word , tag_id, tf>
-
     HashMap<String, Integer> Doc_TF; // mapping: < word , tf> where tf is total , meaning it includes all tags
+    HashMap<String, Integer> Term_Position; // first occurrence of term in doc
 
-    static int count =0;
 
     // Getters and Setters
+
+    public HashMap<String, Integer> getTerm_Position() {return Term_Position;}
     public HashMap<String, Integer> getDoc_TF() {
         return Doc_TF;
     }
-
     public void setDoc_TF(HashMap<String, Integer> doc_TF) {
         Doc_TF = doc_TF;
     }
-    //Getter and setters
     public HashMap<String, Map<Integer,Integer>> getTermFrequencies() {
         return termFrequencies;
     }
-    public void setTermFrequencies(HashMap<String, Map<Integer,Integer>> termFrequencies) {
-        this.termFrequencies = termFrequencies;
-    }
-    // Getters and Setters
-    public int getUnique_word_count() {
-        return unique_word_count;
-    }
-    public void setUnique_word_count(int unique_word_count) {
-        this.unique_word_count = unique_word_count;
-    }
+    public void setTermFrequencies(HashMap<String, Map<Integer,Integer>> termFrequencies) {this.termFrequencies = termFrequencies;}
+    public int getUnique_word_count() {return unique_word_count;}
+    public void setUnique_word_count(int unique_word_count) {this.unique_word_count = unique_word_count;}
 
     /**
      * Constructor of the class xmlReader
@@ -59,11 +51,11 @@ public class xmlReader {
      * Initializes the termFrequencies to an empty HashMap
      * Doc_TF to an empty HashMap
      */
-    public xmlReader(){
+    public document(){
         this.unique_word_count = 0;
         this.termFrequencies = new HashMap<>();
         this.Doc_TF = new HashMap<>();
-        this.count = 0;
+        this.Term_Position = new HashMap<>();
     }
 
     /*** Function that takes a List of terms and Filters out Stopwords specified in the (filepath) txt file .
@@ -81,8 +73,7 @@ public class xmlReader {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //System.out.println(stopWords);
-        // filter out stopwords
+        // filter out stop words
         List<String> filteredTerms = new ArrayList<>();
         for (String w : UniqueTerms ) {
             if (!stopWords.contains(w.toLowerCase())) { // case-insensitive matching
@@ -122,16 +113,8 @@ public class xmlReader {
         for (String word : terms) {
             termsList.add(word);
         }
-
-        //System.out.println("\nwith stopwords:  "+termsList);
         List<String> termsList_filtered = FilterOutStopwords("stopwordsEn.txt",termsList);
-
         List<String> termsWithoutDuplicates = termsList_filtered.stream().distinct().collect(Collectors.toList());
-        // Optional: Convert to lowercase for case-insensitive uniqueness
-//        for (String word : uniqueWords) {
-//            uniqueTerms.add(word.toLowerCase());
-//        }
-
         return termsWithoutDuplicates;
     }
 
@@ -145,7 +128,6 @@ public class xmlReader {
         if (textList == null || word == null || textList.isEmpty() || word.isEmpty()) {
             return 0;
         }
-
         int count = 0;
         for (String text : textList) {
             // Case-insensitive matching (optional: adjust as needed)
@@ -166,10 +148,8 @@ public class xmlReader {
         if (textSet == null || word == null || textSet.isEmpty() || word.isEmpty()) {
             return 0;
         }
-
         // Convert HashSet to List (consider efficiency for large sets)
         List<String> textList = new ArrayList<>(textSet);
-
         return countWordOccurrences_l(textList, word); // Reuse existing function
     }
 
@@ -184,10 +164,8 @@ public class xmlReader {
         }
         // Regular expression for word boundaries (optional for whole words only)
         String regex = "\\b" + word + "\\b";
-
         // Split the text into words (case-insensitive)
         String[] words = text.toLowerCase().split("\\s+");
-
         int count = 0;
         for (String w : words) {
             // Case-insensitive matching
@@ -195,13 +173,8 @@ public class xmlReader {
                 count++;
             }
         }
-
         return count;
     }
-
-
-
-
     /** Function that for each unique term, it finds
      * the Tags in which the Term showed up, and                                                          --     --
      * Term Frequency (inside each tag)
@@ -219,17 +192,15 @@ public class xmlReader {
      * @param Doc_TF HashMap that stores the total TF for each word (incl. all tags)
      * */
     public static HashMap<String, Map<Integer, Integer>> compute_occurrences (List<String> uniqueTerms, int numTags, String title , String abstr ,String body,
-                                                                      String journal , String publisher, ArrayList<String> authors , HashSet<String> categories, HashMap<String, Integer> Doc_TF){
-
+                                                                      String journal , String publisher, ArrayList<String> authors , HashSet<String> categories, HashMap<String, Integer> Doc_TF, HashMap<String, Integer> Term_Position){
         HashMap<String, Map<Integer, Integer>> occurrences = new HashMap<>();
-        int tag_id = 0; // the number [0-6] of the tag , e.g. : 0 - title
-        int total_TF=0;
-
+        int total_TF;
+        String allTags = title + " " + abstr + " " + body + " " + journal + " " + publisher + " " + String.join(" ", authors) + " " + String.join(" ", categories);
         // given the unique terms
-        for (String word:uniqueTerms){                 // for each word
-            int tf=0; // the number of times the term was found in the tag specified by the tag_id
-            total_TF=0;
-            for ( int tag=0; tag<numTags; tag++ ){  // for each tag
+        for (String word:uniqueTerms) {                 // for each word
+            int tf = 0; // the number of times the term was found in the tag specified by the tag_id
+            total_TF = 0;
+            for (int tag = 0; tag < numTags; tag++) {  // for each tag
 
                 tf = switch (tag) {
                     case 0 -> // check title
@@ -246,25 +217,27 @@ public class xmlReader {
                             countWordOccurrences_l(authors, word); // this function is prone to error . it seems to not see the authors' names
                     case 6 -> // check categories
                             countWordOccurrences_s(categories, word);
-                    default -> tf = 0 ;
+                    default -> tf = 0;
                 };
-                //System.out.println(word+"- Tag: "+tag+" TF: "+tf);
 
                 // stores the individual tf for a tag
-                if(tf>0){
-                    Map<Integer,Integer> counts = occurrences.getOrDefault(word, new HashMap<>()); // get the counts of the word
+                if (tf > 0) {
+                    Map<Integer, Integer> counts = occurrences.getOrDefault(word, new HashMap<>()); // get the counts of the word
                     counts.put(tag, tf);
                     occurrences.put(word, counts);
                 }
                 // adds the TFs from all the tags for each word :
-                total_TF = total_TF+tf;
+                total_TF = total_TF + tf;
             }
             // saves the total TF for each word in the HashMap of the caller function
             Doc_TF.put(word, total_TF);
             //System.out.println(word+"- Total TF: "+total_TF);
 
+            if (!Term_Position.containsKey(word)) {
+                int position = allTags.indexOf(word); // stores the first occurrence of the term in the document
+                Term_Position.put(word, position);
+            }
         }
-
         return occurrences;
     }
 

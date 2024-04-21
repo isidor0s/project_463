@@ -1,22 +1,29 @@
 package xmlReader;
+import Doc_voc_data.Vocabulary;
+import Doc_voc_data.document;
 import gr.uoc.csd.hy463.NXMLFileReader;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 
-import static xmlReader.xmlReader.*;
+import static Doc_voc_data.document.*;
+import static Doc_voc_data.Vocabulary.*;
 
 public class folderReader {
-    static HashMap<String, List<String>> vocabulary = new HashMap<>();
-    static HashMap<String,xmlReader> DocList = new HashMap<>();
-    public static void setVocabulary(HashMap<String, List<String>> vocabulary) {
-        folderReader.vocabulary = vocabulary;
-    }
-
-    public static HashMap<String, List<String>> getVocabulary() {
-        return vocabulary;
-    }
+    static Vocabulary voc = new Vocabulary();
+//    static HashMap<String, List<String>> vocabulary = new HashMap<>();
+//    static HashMap<String, document> DocList = new HashMap<>();
+//
+//    public static void setVocabulary(HashMap<String, List<String>> vocabulary) {
+//        folderReader.vocabulary = vocabulary;
+//    }
+//
+//    public static HashMap<String, List<String>> getVocabulary() {
+//        return vocabulary;
+//    }
 
     public static void compute_occurrences_for_directory(String directoryPath) throws IOException {
         File folder = new File(directoryPath);
@@ -38,26 +45,19 @@ public class folderReader {
                     // finds the unique terms in our xmlFile
                     List<String> uniqueTermsList = findUniqueTerms(xmlFile);
                     for (String word: uniqueTermsList) { //Notes: put this loop inside the findUniqueTerms function
-                        List<String> documents = vocabulary.getOrDefault(word, new ArrayList<>());
+                        List<String> documents = voc.getVocabulary().getOrDefault(word, new ArrayList<>());
                         documents.add(file.getName());
-                        vocabulary.put(word, documents);
+                        voc.getVocabulary().put(word, documents);
                     }
 
-                    xmlReader xmlReader = new xmlReader();
-                    count = count + uniqueTermsList.size();
+                    document xmlReader = new document();
+
                     xmlReader.setUnique_word_count(uniqueTermsList.size());
 
                     // compute term occurrences
-                    xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList, 7, title, abstr, body, journal, publisher, authors, categories, xmlReader.getDoc_TF()));
-                    DocList.put(file.getAbsolutePath(), xmlReader); // add the xmlReader object to the list
+                    xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList, 7, title, abstr, body, journal, publisher, authors, categories, xmlReader.getDoc_TF(),xmlReader.getTerm_Position()));
+                    voc.getDocList().put(file.getAbsolutePath(), xmlReader); // add the xmlReader object to the list
 
-                    // print results
-
-//                    System.out.println("--------------------------------------------------------------------");
-//                    System.out.println("\u001B[32mFile:" + file.getName()+"\u001B[0m");
-//                    System.out.println("\u001B[0mUnique words: \u001B[34m" + uniqueTermsList.size());
-//                    System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m ");
-//                    System.out.println(xmlReader.getTermFrequencies());
                 } else if (file.isDirectory()) {
                     compute_occurrences_for_directory(file.getAbsolutePath()); // recursively search subdirectories
                 }
@@ -85,35 +85,47 @@ public class folderReader {
      * --- df_i =
      * ----------------------------------------------------------------------------------
      */
-    public static void calculate_normalization_factor() {
-        int N = DocList.size(); // number of docs in collection
-        int counter = 0;
-        DocList.forEach((k,v)->{
-            double docLength_v = 0;
-            int df_i;           // apo to vocabulary
-            double idf_i;
-            for (Map.Entry<String,Integer> term : v.getDoc_TF().entrySet()) {
-                int tf = term.getValue();
-                String word = term.getKey();
-                df_i = vocabulary.get(word).size();
-                idf_i = (Math.log( N/df_i )/ Math.log(2));
-                double weight =  (tf * idf_i);
-                System.out.printf("%.4f , ",weight );
-                docLength_v = docLength_v + Math.pow(weight,2);
-            }
-            double normalizationFactor = Math.sqrt(docLength_v);
-            System.out.println("\nNormalization Factor for Doc: "+ k + " is: "+ normalizationFactor);
+    public static void calculate_normalization_factor() throws IOException {
+        int N = voc.getDocList().size(); // number of docs in collection
 
-        });
+        File file = new File("Resources/CollectionIndex/DocumentFile.txt");
+        if(file.exists()){
+            file.delete();
+        }
+        file.createNewFile();
+        try(PrintWriter writer = new PrintWriter(new FileWriter(file,true))) {
+            voc.getDocList().forEach((k,v)->{
+                double docLength_v = 0;
+
+                for (Map.Entry<String,Integer> term : v.getDoc_TF().entrySet()) {
+                    int tf = term.getValue();
+                    String word = term.getKey();
+                    int df_i = voc.getVocabulary().get(word).size();
+                    double idf_i = (Math.log( N/df_i )/ Math.log(2));
+                    double weight =  (tf * idf_i);
+                    docLength_v = docLength_v + Math.pow(weight,2);
+                }
+                double normalizationFactor = Math.sqrt(docLength_v);
+
+                // Extract the ID from the file path
+                Path path = Paths.get(k);
+                String fileName = path.getFileName().toString();
+                String id = fileName.substring(0, fileName.lastIndexOf('.'));
+
+                writer.println(id + " " + k + " " + normalizationFactor);
+            });
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         long startTime = System.currentTimeMillis();
         // specify the directory path
-        String directoryPath = "resources/MiniCollection/diagnosis/Topic_1/0";
+        String directoryPath = "resources/MiniCollection/diagnosis/";
         compute_occurrences_for_directory(directoryPath);
 
-        System.out.println("Total number of unique words in each doc found: "+ count);
-        System.out.println("Vocabulary Size: "+ vocabulary.size());
+
+        System.out.println("Vocabulary Size: "+ voc.getVocabulary().size());
 
         // Create CollectionIndex directory
         File dir = new File("Resources/CollectionIndex");
@@ -128,7 +140,7 @@ public class folderReader {
         // Write vocabulary to file
         try (PrintWriter writer = new PrintWriter(new FileWriter(vocabFile))) {
             // Sort vocabulary
-            Map<String, List<String>> sortedVocabulary = new TreeMap<>(vocabulary);
+            Map<String, List<String>> sortedVocabulary = new TreeMap<>(voc.getVocabulary());
             // Write each word and its document frequency to the file
             for (Map.Entry<String, List<String>> entry : sortedVocabulary.entrySet()) {
                 writer.println(entry.getKey() + " " + entry.getValue().size());
@@ -137,8 +149,17 @@ public class folderReader {
             e.printStackTrace();
         }
 
-        // k - file
-        // v - the exact xmlReader created for this use. (incl. vocabulary)
+        calculate_normalization_factor();
+        System.out.println("Docs readed" + voc.getDocList().size());
+        long endTime = System.currentTimeMillis();
+        long elapsedTime = endTime - startTime;
+        System.out.println("Execution time in milliseconds: " + elapsedTime);
+    }
+}
+
+//some prints to check the results
+// k - file
+// v - the exact xmlReader created for this use. (incl. vocabulary)
 //        DocList.forEach((k,v) -> {
 //            System.out.println("--------------------------------------------------------------------");
 //            System.out.println("\u001B[32mFile:" + k + "\u001B[0m");
@@ -146,10 +167,3 @@ public class folderReader {
 //            System.out.println("\u001B[36mTerms with Tag_id & tf: \u001B[0m ");
 //            System.out.println(v.getTermFrequencies());
 //        });
-        calculate_normalization_factor();
-        System.out.println(DocList.size());
-        long endTime = System.currentTimeMillis();
-        long elapsedTime = endTime - startTime;
-        System.out.println("Execution time in milliseconds: " + elapsedTime);
-    }
-}
