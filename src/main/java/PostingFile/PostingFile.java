@@ -1,8 +1,6 @@
 package PostingFile;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -20,6 +18,11 @@ import java.util.*;
 
 public class PostingFile {
     private RandomAccessFile raf;
+
+
+    public RandomAccessFile getRaf() {
+        return raf;
+    }
 
     // constructor
     public PostingFile(String filename) {
@@ -83,8 +86,44 @@ public class PostingFile {
         raf.close();
      }
 
-    public static void main(String[] args) {
-        PostingFile pp = new PostingFile("Postings.txt");
+    public static void main(String[] args) throws IOException {
+        compute_PostingFile();
+    }
 
+    private static void compute_PostingFile() throws IOException {
+        PostingFile pp = new PostingFile("Postings.txt");
+        BufferedReader vocabReader = new BufferedReader(new FileReader("resources/CollectionIndex/VocabularyFile.txt"));
+        BufferedReader documentsReader = new BufferedReader(new FileReader("resources/CollectionIndex/DocumentsFile.txt"));
+
+        String line;
+        while ( (line = vocabReader.readLine()) != null) {
+            // Parse the line to extract term and df
+            String[] parts = line.split(" ");
+            String term = parts[0];
+            int df = Integer.parseInt(parts[1]);
+
+            // Write term's df to posting.txt
+            long pointer = pp.getRaf().getFilePointer(); // Get current pointer position
+            pp.getRaf().writeInt(df); // Write df
+
+            // Iterate over each document in documents.txt
+            String docLine;
+            while ((docLine = documentsReader.readLine()) != null) {
+                // Parse the line to extract doc_id, tf, and tf*idf
+                String[] docParts = docLine.split(" ");
+                int docId = Integer.parseInt(docParts[0]);
+                double tfIdf = Double.parseDouble(docParts[1]);
+
+                // Write doc_id, tf*idf to posting.txt
+                pp.getRaf().writeInt(docId);
+                pp.getRaf().writeDouble(tfIdf);
+
+                // Write positions (if needed) - Example: postingFile.writeInt(position);
+
+                // Update pointer to documents.txt for this term
+                // Example: postingFile.writeLong(docPointer);
+            }
+
+        }
     }
 }

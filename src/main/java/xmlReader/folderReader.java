@@ -88,7 +88,7 @@ public class folderReader {
     public static void calculate_normalization_factor() throws IOException {
         int N = voc.getDocList().size(); // number of docs in collection
 
-        File file = new File("Resources/CollectionIndex/DocumentFile.txt");
+        File file = new File("Resources/CollectionIndex/DocumentsFile.txt");
         if(file.exists()){
             file.delete();
         }
@@ -118,6 +118,9 @@ public class folderReader {
             e.printStackTrace();
         }
     }
+
+
+
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         long startTime = System.currentTimeMillis();
         // specify the directory path
@@ -149,8 +152,11 @@ public class folderReader {
             e.printStackTrace();
         }
 
-        calculate_normalization_factor();
-        System.out.println("Docs readed" + voc.getDocList().size());
+        calculate_normalization_factor(); // creates the DocumentsFile.txt
+
+
+
+        System.out.println("Docs read" + voc.getDocList().size());
         long endTime = System.currentTimeMillis();
         long elapsedTime = endTime - startTime;
         System.out.println("Execution time in milliseconds: " + elapsedTime);
