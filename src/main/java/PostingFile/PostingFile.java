@@ -87,20 +87,32 @@ public class PostingFile {
      }
 
     public static void main(String[] args) throws IOException {
-        compute_PostingFile();
+        //compute_PostingFile();
     }
 
-    private static void compute_PostingFile() throws IOException {
-        PostingFile pp = new PostingFile("Postings.txt");
+    /***
+     *
+     * @param Doc_TF < word , total_tf> where tf is total , meaning it includes all tags
+     * @throws IOException
+     */
+    private static void compute_PostingFile(HashMap<String, Integer> Doc_TF ,  HashMap<String, List<String>> vocabulary,HashMap<String, Integer> Term_Position) throws IOException {
+        PostingFile pp = new PostingFile("PostingFile.txt");
         BufferedReader vocabReader = new BufferedReader(new FileReader("resources/CollectionIndex/VocabularyFile.txt"));
         BufferedReader documentsReader = new BufferedReader(new FileReader("resources/CollectionIndex/DocumentsFile.txt"));
 
         String line;
         while ( (line = vocabReader.readLine()) != null) {
             // Parse the line to extract term and df
-            String[] parts = line.split(" ");
+            String[] parts = line.split(" "); // eg apple 2 --> term:apple, df:2
             String term = parts[0];
+
             int df = Integer.parseInt(parts[1]);
+            // int pointerVoc = ;
+
+            List<String> Doc_Ids = vocabulary.get(term); // names.xml
+            int tf = Doc_TF.get(term);
+            int pos = Term_Position.get(term);
+            //int pointerPost= ;
 
             // Write term's df to posting.txt
             long pointer = pp.getRaf().getFilePointer(); // Get current pointer position
@@ -111,12 +123,13 @@ public class PostingFile {
             while ((docLine = documentsReader.readLine()) != null) {
                 // Parse the line to extract doc_id, tf, and tf*idf
                 String[] docParts = docLine.split(" ");
+
                 int docId = Integer.parseInt(docParts[0]);
-                double tfIdf = Double.parseDouble(docParts[1]);
+                //double tf = Double.parseDouble(docParts[1]);
 
                 // Write doc_id, tf*idf to posting.txt
                 pp.getRaf().writeInt(docId);
-                pp.getRaf().writeDouble(tfIdf);
+                pp.getRaf().writeDouble(tf);
 
                 // Write positions (if needed) - Example: postingFile.writeInt(position);
 

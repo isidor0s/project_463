@@ -47,7 +47,9 @@ public class folderReader {
                     for (String word: uniqueTermsList) { //Notes: put this loop inside the findUniqueTerms function
                         List<String> documents = voc.getVocabulary().getOrDefault(word, new ArrayList<>());
                         documents.add(file.getName());
-                        voc.getVocabulary().put(word, documents);
+                        voc.getVocabulary().put(word, documents); // fills the Vocabulary.vocabulary with a list of docs
+
+                        // ...
                     }
 
                     document xmlReader = new document();
@@ -108,7 +110,7 @@ public class folderReader {
                 double normalizationFactor = Math.sqrt(docLength_v);
 
                 // Extract the ID from the file path
-                Path path = Paths.get(k);
+                Path path = Paths.get(k); // k - absolute path of the document
                 String fileName = path.getFileName().toString();
                 String id = fileName.substring(0, fileName.lastIndexOf('.'));
 
