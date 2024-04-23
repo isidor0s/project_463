@@ -1,6 +1,7 @@
 package xmlReader;
 import Doc_voc_data.Vocabulary;
 import Doc_voc_data.document;
+import PostingFile.PostingFile;
 import gr.uoc.csd.hy463.NXMLFileReader;
 
 import java.io.*;
@@ -11,9 +12,11 @@ import java.util.*;
 
 import static Doc_voc_data.document.*;
 import static Doc_voc_data.Vocabulary.*;
+import static PostingFile.PostingFile.*;
 
 public class folderReader {
     static Vocabulary voc = new Vocabulary();
+    static PostingFile postfile = new PostingFile("PostingFile.txt");
 //    static HashMap<String, List<String>> vocabulary = new HashMap<>();
 //    static HashMap<String, document> DocList = new HashMap<>();
 //
@@ -49,7 +52,6 @@ public class folderReader {
                         documents.add(file.getName());
                         voc.getVocabulary().put(word, documents); // fills the Vocabulary.vocabulary with a list of docs
 
-                        // ...
                     }
 
                     document xmlReader = new document();
@@ -59,6 +61,14 @@ public class folderReader {
                     // compute term occurrences
                     xmlReader.setTermFrequencies(compute_occurrences(uniqueTermsList, 7, title, abstr, body, journal, publisher, authors, categories, xmlReader.getDoc_TF(),xmlReader.getTerm_Position()));
                     voc.getDocList().put(file.getAbsolutePath(), xmlReader); // add the xmlReader object to the list
+
+                    // Function that finds the doc_ids, tf_i, pos for each word and
+                    // writes the info in a posting file called PostingFile.txt (raf)
+                    //                   <word, TotalTF>  ,   <word, List of Doc_names> ,       <word, pos>
+                    System.out.println("Doc_TF: " + xmlReader.getDoc_TF());
+
+//                    compute_PostingFile(xmlReader.getDoc_TF(), voc.getVocabulary(), xmlReader.getTerm_Position());
+
 
                 } else if (file.isDirectory()) {
                     compute_occurrences_for_directory(file.getAbsolutePath()); // recursively search subdirectories
