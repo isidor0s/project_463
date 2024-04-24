@@ -96,7 +96,7 @@ public class PostingFile {
      * @throws IOException
      */
     private static void compute_PostingFile(HashMap<String, Integer> Doc_TF ,  HashMap<String, List<String>> vocabulary,HashMap<String, Integer> Term_Position) throws IOException {
-        PostingFile pp = new PostingFile("PostingFile.txt");
+        PostingFile pp = new PostingFile("PostingFile.txt");  // CREATES A RANDOM ACCESS FILE
         BufferedReader vocabReader = new BufferedReader(new FileReader("resources/CollectionIndex/VocabularyFile.txt"));
         BufferedReader documentsReader = new BufferedReader(new FileReader("resources/CollectionIndex/DocumentsFile.txt"));
 
@@ -117,6 +117,12 @@ public class PostingFile {
             // Write term's df to posting.txt
             long pointer = pp.getRaf().getFilePointer(); // Get current pointer position
             pp.getRaf().writeInt(df); // Write df
+
+            // write lines for each different document
+            for (String Doc: Doc_Ids){
+                pp.getRaf().writeUTF(Doc.replace(".nxml", ""));
+            }
+
 
             // Iterate over each document in documents.txt
             String docLine;

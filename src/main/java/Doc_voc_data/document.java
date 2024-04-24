@@ -3,6 +3,8 @@ import gr.uoc.csd.hy463.NXMLFileReader;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /***
@@ -104,9 +106,13 @@ public class document {
         textBuilder.append(" ");
         textBuilder.append(file.getCategories());
 
-        String words = textBuilder.toString().replaceAll("[^\\sa-zA-Z0-9]", " ");
+        String words = textBuilder.toString().replaceAll("[^\\sa-zA-Z0-9]", " "); // without punctuation
+        words = words.replaceAll("\\s+", " ");
+
         Set<String> uniqueWords = new HashSet<>(Arrays.asList(words));
         uniqueTerms.addAll(uniqueWords);
+        //System.out.println("----------\n" + uniqueTerms+"\n----------");
+
         String largeString = uniqueTerms.get(0);
         String[] terms = largeString.split("\\s+");  // "\\s+" matches whitespace characters
         List<String> termsList = new ArrayList<>();
@@ -116,8 +122,33 @@ public class document {
         List<String> termsList_filtered = FilterOutStopwords("stopwordsEn.txt",termsList);
         List<String> termsWithoutDuplicates = termsList_filtered.stream().distinct().collect(Collectors.toList());
         return termsWithoutDuplicates;
+
     }
 
+    public static List <String> findTerms (NXMLFileReader file){
+        StringBuilder textBuilder = new StringBuilder();
+        textBuilder.append(file.getTitle());
+        textBuilder.append(" ");
+        textBuilder.append(file.getAbstr());
+        textBuilder.append(" ");
+        textBuilder.append(file.getBody());
+        textBuilder.append(" ");
+        textBuilder.append(file.getJournal());
+        textBuilder.append(" ");
+        textBuilder.append(file.getPublisher());
+        textBuilder.append(" ");
+        textBuilder.append(file.getAuthors());
+        textBuilder.append(" ");
+        textBuilder.append(file.getCategories());
+
+        String words = textBuilder.toString().replaceAll("[^\\sa-zA-Z0-9]", " "); // without punctuation
+        words = words.replaceAll("\\s+", " ");
+        String[] terms = words.split("\\s+");
+        List<String> termsList = new ArrayList<>();
+        Collections.addAll(termsList, terms);
+        List<String> termsList_filtered = FilterOutStopwords("stopwordsEn.txt",termsList);
+        return termsList_filtered;
+    }
 
     /*** Function that searches through a text(List<String>) to find the number of times a word (String) was found.
      * @param textList , the text (tag) we want to search into

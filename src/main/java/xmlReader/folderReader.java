@@ -65,7 +65,7 @@ public class folderReader {
                     // Function that finds the doc_ids, tf_i, pos for each word and
                     // writes the info in a posting file called PostingFile.txt (raf)
                     //                   <word, TotalTF>  ,   <word, List of Doc_names> ,       <word, pos>
-                    System.out.println("Doc_TF: " + xmlReader.getDoc_TF());
+//                    System.out.println("Doc_TF: " + xmlReader.getDoc_TF());
 
 //                    compute_PostingFile(xmlReader.getDoc_TF(), voc.getVocabulary(), xmlReader.getTerm_Position());
 
@@ -110,6 +110,7 @@ public class folderReader {
                 double docLength_v = 0;
 
                 for (Map.Entry<String,Integer> term : v.getDoc_TF().entrySet()) {
+                    System.out.println(term.getKey() + " " + term.getValue());
                     int tf = term.getValue();
                     String word = term.getKey();
                     int df_i = voc.getVocabulary().get(word).size();
@@ -136,7 +137,7 @@ public class folderReader {
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         long startTime = System.currentTimeMillis();
         // specify the directory path
-        String directoryPath = "resources/MiniCollection/diagnosis/";
+        String directoryPath = "resources/MiniCollection/diagnosis/Topic_1/3";
         compute_occurrences_for_directory(directoryPath);
 
 
