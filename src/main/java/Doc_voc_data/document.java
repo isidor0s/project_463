@@ -200,9 +200,9 @@ public class document {
         int count = 0;
         for (String w : words) {
             // Case-insensitive matching
-            if (w.equalsIgnoreCase(word)) {
+//            if (w.equalsIgnoreCase(word)) {
                 count++;
-            }
+//            }
         }
         return count;
     }

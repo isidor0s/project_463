@@ -3,7 +3,6 @@ package pIndexing;
 import Doc_voc_data.Vocabulary;
 import Doc_voc_data.document;
 import gr.uoc.csd.hy463.NXMLFileReader;
-
 import javax.management.Query;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,20 +11,34 @@ import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-
 import static Doc_voc_data.document.compute_occurrences;
 import static Doc_voc_data.document.*;
 //import static PostingFile.PostingFile.compute_PostingFile;
 import static Doc_voc_data.Vocabulary.*;
 
-
+/**
+ * [B6]
+ * ---GOAL---:    to create an InvertedIndex File with all the relevant information
+ * --------------------------------------------------------------------------------
+ *  pindexing           |    holds information about :
+ * --------------------------------------------------------------------------------
+ * - the vocabulary         (word, df, pointer)
+ * - the partial indexes    (Queue of filenames)
+ * - the Posting Files      (doc_id, tf, positions, points)
+ * - the threshold          (associated heap size)
+ * - the docFile            (RandomAccessFile ~ DocumentsFile.txt)
+ *
+ * @version 2.0
+ *
+ */
 public class pindexing {
     /* -------------------------------- Basic Parameters ---------------------------------------- */
-    private static final int THRESHOLD = 10200;                  // Threshold -- heap size
+    private static final int THRESHOLD = 10200;                 // Threshold -- associated heap size
     static Vocabulary voc = new Vocabulary();                   // Vocabulary -- holds
     static Queue<String> partialIndexes = new LinkedList<>();   // Queue with partialIndexes' names
     static int indexCount = 0;                                  // no use yet
-    static RandomAccessFile docFile;
+    static RandomAccessFile docFile;                            // creates DocumentsFile.txt with the 3 important info - filename, filepath, tf*idf
+    /* ------------------------------------------------------------------------------------------ */
 
     static {
         try {
@@ -34,7 +47,6 @@ public class pindexing {
             throw new RuntimeException(e);
         }
     }
-    /* ------------------------------------------------------------------------------------------ */
 
 
     /**
@@ -129,16 +141,17 @@ public class pindexing {
                 String fileName = path.getFileName().toString();
                 String id = fileName.substring(0, fileName.lastIndexOf('.'));
 //                System.out.println(id +" " + docpointer.get(id));
-                posting.writeUTF(id+" "+ voc.getDocList().get(docid).getDoc_TF().get(word) +" "+docpointer.get(id)+ "\n"); /// add doc pointer
+                posting.writeBytes(String.format("%s %s %s\n",id,voc.getDocList().get(docid).getDoc_TF().get(word),docpointer.get(id))); /// add doc pointer
             }
 //            System.out.println(voc.getVocabulary().get(word).size());
-            vocab.writeUTF(word + " " + voc.getVocabulary().get(word).size()+ " "+ pointer+"\n"); // medicine 324851.nxml
+            vocab.writeBytes(String.format("%s %s %s\n",word,voc.getVocabulary().get(word).size(),pointer)); // medicine 324851.nxml
 //            term_posting_pointer.put(word, pointer);
         }
 //        System.out.println("--------------\n"+voc.getVocabulary()+"\n--------------");
 
-        partialIndexes.add(partialVocab); // saves the name partialIndexFile to the Queue
+        partialIndexes.add(partialVocab); // saves the name partialIndexFile to the Queu
         voc.getVocabulary().clear();
+
     }
 
     /***
@@ -172,8 +185,8 @@ public class pindexing {
         while (!partialIndicesQueue.isEmpty() && partialIndicesQueue.size() > 1 ){
             String partialIndex1 = partialIndicesQueue.poll(); // takes the 1st element
             String partialIndex2 = partialIndicesQueue.poll(); //
-            System.out.println(partialIndex1);
-            System.out.println(partialIndex2);
+            //System.out.println(partialIndex1);
+            //System.out.println(partialIndex2);
 
             /* Open partialIndex1 and partialIndex2, read partial vocabulary and posting file names */
             RandomAccessFile vocab1 = new RandomAccessFile(partialIndex1, "r");
@@ -183,11 +196,11 @@ public class pindexing {
             String mergedVocab = "resources/if/mergedVocab" + partialIndicesQueue.size() + ".txt";
             RandomAccessFile merged = new RandomAccessFile(mergedVocab, "rw");
 
-            String line1 = vocab1.readUTF(); // indice 1
-            String line2 = vocab2.readUTF(); // indice 2
+            String line1 = vocab1.readLine(); // indice 1
+            String line2 = vocab2.readLine(); // indice 2
 
-            System.out.println(line1);
-            System.out.println(line2);
+            //System.out.println(line1);
+            //System.out.println(line2);
             while (line1 != null && line2 != null) {
                 String[] split1 = line1.split(" "); // space seperated values
                 // get the word
@@ -205,7 +218,8 @@ public class pindexing {
                 } else if(word1.compareTo(word2) == 0){        // word_i == word_j , IT'S THE SAME WORD
                     if(split1.length>1){
                         int df = Integer.parseInt(split1[1]) + Integer.parseInt(split2[1]); // df_i + df_j
-                        merged.writeBytes(word1 + " " + df + "\n");  // write word_i to merged file along with its df
+                        int p = Integer.parseInt(split1[2]); // pointer to posting file
+                        merged.writeBytes(word1 + " " + df + " "+ p +"\n");  // write word_i to merged file along with its df
                     }
                     line1 = vocab1.readLine();                      // moves the files pointers
                     line2 = vocab2.readLine();                      // from both files
@@ -254,15 +268,11 @@ public class pindexing {
             System.out.println("Number of Partial Indexes: " + partialIndexes.size());
 
             // Merge the partial indexes - every two indexes
-            /*if (partialIndexes.size()%2 == 0){
+            if (partialIndexes.size()%2 == 0){
                 mergePartialIndices(partialIndexes);
-
             }else{
-                for ( int i = 0; i < 9; i+=2){
-                    mergePartialIndices(partialIndexes);
-                }
-            }*/
-
+                System.out.println("Odd number of partial indexes. Cannot merge.");
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
