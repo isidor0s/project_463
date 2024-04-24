@@ -137,7 +137,7 @@ public class folderReader {
     public static void main(String[] args) throws UnsupportedEncodingException, IOException {
         long startTime = System.currentTimeMillis();
         // specify the directory path
-        String directoryPath = "resources/MiniCollection/diagnosis/Topic_1/3";
+        String directoryPath = "resources/MiniCollection/diagnosis/Topic_1";
         compute_occurrences_for_directory(directoryPath);
 
 

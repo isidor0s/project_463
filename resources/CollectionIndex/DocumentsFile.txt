@@ -1,1 +1,13 @@
-test C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\3\test.nxml 0.0
+1852545 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\0\1852545.nxml 106.18875397108937
+2737775 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\1\2737775.nxml 189.56723142903468
+3078282 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\2\3078282.nxml 81.29143840706823
+2267791 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\1\2267791.nxml 363.84789702509715
+2729419 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\1\2729419.nxml 446.2485993195336
+2232040 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\0\2232040.nxml 4463.175636833774
+test C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\3\test.nxml 21.910278406082327
+2635122 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\1\2635122.nxml 117.878955696907
+3199072 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\2\3199072.nxml 96.93498528301704
+1942180 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\0\1942180.nxml 49.33709092114783
+3259311 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\2\3259311.nxml 426.5109011689743
+1994002 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\0\1994002.nxml 256.7550916243757
+130966 C:\Users\antig\Documents\GitHub\project_463\resources\MiniCollection\diagnosis\Topic_1\2\130966.nxml 228.19245264983164

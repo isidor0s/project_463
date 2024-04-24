@@ -8,6 +8,8 @@ import javax.management.Query;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static Doc_voc_data.document.compute_occurrences;
@@ -33,30 +35,24 @@ public class pindexing {
 //                  // finds the unique terms in our xmlFile
                     List<String> uniqueTermsList = findUniqueTerms(xmlFile);
                     List<String> allTerms = findTerms(xmlFile);
-                    document doc = new document(); //Make a document class
+                    document doc = new document(); //Make a new document class
+                    voc.getDocList().put(file.getAbsolutePath(), doc);
                     for (int i = 0; i < uniqueTermsList.size(); i++) {
                         String word = uniqueTermsList.get(i);
-
                         if (voc.getVocabulary().size() >= THRESHOLD && i == uniqueTermsList.size() - 1) {
-                            //System.out.println("gamw tin manoula sou");
                             createPartialIndex();
                         }
-                        //int tf = compute_term_occurrences(word, uniqueTermsList, 7, xmlFile.getTitle(), xmlFile.getAbstr(), xmlFile.getBody(), xmlFile.getJournal(), xmlFile.getPublisher(), xmlFile.getAuthors(), xmlFile.getCategories(), doc.getDoc_TF(), doc.getTerm_Position());
-
                         // fill the Doc_TF <word, total_tf>
-                        for ( String term : allTerms ){
+                        for ( String term : allTerms ){//this calculates the df
                             if(Objects.equals(term, word)) {
-                                doc.getDoc_TF().compute(term, (k, v) -> v == null ? 1 : v + 1);
+                                voc.getDocList().get(file.getAbsolutePath()).getDoc_TF().compute(term, (k, v) -> v == null ? 1 : v + 1);
                             }
                         }
-                        System.out.println(word+" " +doc.getDoc_TF().get(word));
+//                        System.out.println(word+" " +doc.getDoc_TF().get(word));
 
                         List<String> documents = voc.getVocabulary().getOrDefault(word, new ArrayList<>()); // for df purposes
-                        documents.add(file.getName());
+                        documents.add(file.getAbsolutePath());
                         voc.getVocabulary().put(word, documents);
-
-                        //System.out.println(uniqueTermsList.iterator().hasNext());
-                        //System.out.println(voc.getVocabulary().size());
 
                         // fills the Vocabulary.vocabulary with a list of docs
                     }
@@ -73,47 +69,64 @@ public class pindexing {
     private static void createPartialIndex() throws IOException {
         List<String> sortedWords = new ArrayList<>(voc.getVocabulary().keySet());
         Collections.sort(sortedWords);
-
-        String partialIndexFileName = "resources/if/partialIndex" + partialIndexes.size() + ".txt";
+        String pathPrefix = "resources/if/";
+        String partialPosting = pathPrefix + "partialPosting" + partialIndexes.size() + ".txt";
+        String partialVocab = pathPrefix + "partialVocab" + partialIndexes.size() + ".txt";
         // VocabularyFile.txt ---> < word df >
+//        HashMap<String,Long> term_posting_pointer = new HashMap<>(); // points to ... , is located in ...
+        RandomAccessFile posting = new RandomAccessFile(partialPosting, "rw"); // partial Posting
+        RandomAccessFile vocab = new RandomAccessFile(partialVocab, "rw"); // partial vocabulary
 
-        try (RandomAccessFile raf = new RandomAccessFile(partialIndexFileName, "rw")) {
-            for (String word : sortedWords) {
-                long pointer = raf.getFilePointer();
-
-                    raf.writeUTF(word + " " + voc.getVocabulary().get(word).size() + "\n"); // medicine 324851.nxml
-                voc.getVocabulary().put(word, Collections.singletonList(String.valueOf(pointer)));
-
+        for (String word : sortedWords) {
+            long pointer = posting.getFilePointer();
+            for(String docid : voc.getVocabulary().get(word)) {
+                Path path = Paths.get(docid); // k - absolute path of the document
+                String fileName = path.getFileName().toString();
+                String id = fileName.substring(0, fileName.lastIndexOf('.'));
+                posting.writeUTF(id+" "+ voc.getDocList().get(docid).getDoc_TF().get(word) + "\n"); /// add doc pointer
             }
+          vocab.writeUTF(word + " " + voc.getVocabulary().get(word).size()+ " "+ pointer + "\n"); // medicine 324851.nxml
+//            term_posting_pointer.put(word, pointer);
         }
+//        System.out.println("--------------\n"+voc.getVocabulary()+"\n--------------");
 
-        partialIndexes.add(partialIndexFileName); // saves the name partialIndexFile to the Queue
+        partialIndexes.add(partialPosting); // saves the name partialIndexFile to the Queue
         voc.getVocabulary().clear();
     }
 
-    //this calculates tf for tag for one term to be used inside a loop
-    public static int compute_term_occurrences(String word, List<String> uniqueTerms, int numTags, String title, String abstr, String body,
-                                               String journal, String publisher, ArrayList<String> authors, HashSet<String> categories, HashMap<String, Integer> Doc_TF, HashMap<String, Integer> Term_Position){
-        int total_TF;
-        String allTags = title + " " + abstr + " " + body + " " + journal + " " + publisher + " " + String.join(" ", authors) + " " + String.join(" ", categories);
-            // given the unique terms
-            total_TF = countWordOccurrences(allTags, word);
-            // saves the total TF for each word in the HashMap of the caller function
-            Doc_TF.put(word, total_TF);
-            //System.out.println(word+"- Total TF: "+total_TF);
-            if (!Term_Position.containsKey(word)) {
-                int position = allTags.indexOf(word); // stores the first occurrence of the term in the document
-                Term_Position.put(word, position);
-            }
+    public static void calculate_doc_norm(){
 
-        return total_TF;
+    }
+
+    /**
+     * Function that merges pair of Psrtial Indexes saved in a queue called partialIndicesQueue
+     * @param partialIndicesQueue a queue of PartialIndexFiles' names
+     */
+    public Queue<String> mergePartialIndices(Queue<String> partialIndicesQueue) {
+        while (!partialIndicesQueue.isEmpty()) {
+            String partialIndex1 = partialIndicesQueue.poll(); // takes the 1st element
+            String partialIndex2 = partialIndicesQueue.poll(); // 
+
+            // Open partialIndex1 and partialIndex2, read partial vocabulary and posting file names
+
+            // Compare words and merge
+            mergePartialIndexFiles(partialIndex1, partialIndex2);
+
+            // Delete partialIndex1 and partialIndex2
+            // Add merged file name to queue
+
+        }
+    }
+
+    private void mergePartialIndexFiles(String partialIndex1, String partialIndex2) {
+
     }
 
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
         try {
             // Specify the directory path
-            String directoryPath = "resources/MiniCollection/diagnosis/Topic_1/3";
+            String directoryPath = "resources/MiniCollection/";
 
             // Compute occurrences for directory
             compute_occurrences_for_directory(directoryPath);
