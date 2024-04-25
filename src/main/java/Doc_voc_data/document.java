@@ -30,7 +30,15 @@ public class document {
     HashMap<String, Integer> Doc_TF; // mapping: < word , tf> where tf is total , meaning it includes all tags
     HashMap<String, Integer> Term_Position; // first occurrence of term in doc
 
+    long docPointer; // pointer to the location in the PostingFile where the entry should be written.
 
+    public long getDocPointer() {
+        return docPointer;
+    }
+
+    public void setDocPointer(long docPointer) {
+        this.docPointer = docPointer;
+    }
     // Getters and Setters
 
     public HashMap<String, Integer> getTerm_Position() {return Term_Position;}

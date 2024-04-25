@@ -20,13 +20,18 @@ public class folderReader {
 //    static HashMap<String, List<String>> vocabulary = new HashMap<>();
 //    static HashMap<String, document> DocList = new HashMap<>();
 //
-//    public static void setVocabulary(HashMap<String, List<String>> vocabulary) {
-//        folderReader.vocabulary = vocabulary;
-//    }
-//
-//    public static HashMap<String, List<String>> getVocabulary() {
-//        return vocabulary;
-//    }
+    public static void setVocabulary(Vocabulary vocabulary) {
+        folderReader.voc = vocabulary;
+    }
+
+    public static Vocabulary getVocabulary() {
+        return voc;
+    }
+
+    //constructor
+    public folderReader() {
+        this.voc = new Vocabulary();
+    }
 
     public static void compute_occurrences_for_directory(String directoryPath) throws IOException {
         File folder = new File(directoryPath);
@@ -110,7 +115,7 @@ public class folderReader {
                 double docLength_v = 0;
 
                 for (Map.Entry<String,Integer> term : v.getDoc_TF().entrySet()) {
-                    System.out.println(term.getKey() + " " + term.getValue());
+                    //System.out.println(term.getKey() + " " + term.getValue());
                     int tf = term.getValue();
                     String word = term.getKey();
                     int df_i = voc.getVocabulary().get(word).size();
