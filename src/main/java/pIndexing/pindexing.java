@@ -198,8 +198,8 @@ public class pindexing {
         while (!partialIndicesQueue.isEmpty() && partialIndicesQueue.size() > 1 ){
             String partialIndex1 = partialIndicesQueue.poll(); // takes the 1st element
             String partialIndex2 = partialIndicesQueue.poll(); //
-            System.out.println(partialIndex1);
-            System.out.println(partialIndex2);
+            //System.out.println(partialIndex1);
+            //System.out.println(partialIndex2);
 
             /* Open partialIndex1 and partialIndex2, read partial vocabulary and posting file names */
             RandomAccessFile vocab1 = new RandomAccessFile(partialIndex1, "rwd");
@@ -282,6 +282,7 @@ public class pindexing {
      * @throws IOException ioexception
      */
     public static void mergeBOTHPartialIndices(Queue<String> partialIndicesQueue_V, Queue <String> partialIndicesQueue_P) throws IOException {
+
         while ((!partialIndicesQueue_V.isEmpty() && partialIndicesQueue_V.size() > 1) && (!partialIndicesQueue_P.isEmpty() && partialIndicesQueue_P.size() > 1)) {
             /* ------------------------------------ Vocabulary -------------------------------------- */
             String partialIndex1_V = partialIndicesQueue_V.poll(); // takes the 1st element
@@ -294,7 +295,9 @@ public class pindexing {
             RandomAccessFile merged_V = new RandomAccessFile(mergedVocab, "rw");
 
             String line1_V = vocab1.readLine(); // indice 1
+            //System.out.println(line1_V);
             String line2_V = vocab2.readLine(); // indice 2
+            //System.out.println(line2_V);
             /* -------------------------------------------------------------------------------------- */
             /* ------------------------------------- Posting ---------------------------------------- */
             String partialIndex1_P = partialIndicesQueue_P.poll(); // takes the 1st element
@@ -311,42 +314,13 @@ public class pindexing {
             /* -------------------------------------------------------------------------------------- */
             /* ---------------------------- Merging Posting files ----------------------------------- */
             /* | posting files :  |   < doc_id  , tf  ,  pos  >                                       */
-            while (line1_P != null && line2_P != null) {
+            while ((line1_P != null && line2_P != null) || ((line1_V != null && line2_V != null))) {
                 String[] split1 = line1_P.split(" "); // space seperated values
-                // get the word
                 String[] split2 = line2_P.split(" ");
 
                 String doc_id1 = split1[0];   // works because each line stores a word
                 String doc_id2 = split2[0];   // ...
 
-                if (doc_id1.compareTo(doc_id2) < 0) {              // doc_id_i < doc_id_j , D1 < D3
-                    merged_P.writeBytes(line1_P + "\n");        // write word_i to merged file
-                    line1_P = post1.readLine();                 // moves file pointer of file vocab1
-                } else if (doc_id1.compareTo(doc_id2) > 0) {       // word_i > word_j
-                    merged_P.writeBytes(line2_P + "\n");        // write word_j to merged file
-                    line2_P = post2.readLine();                 // moves file pointer of file vocab2
-                } else if (doc_id1.compareTo(doc_id2) == 0) {        // word_i == word_j , IT'S THE SAME WORD
-                    if (split1.length > 1) {                    // row has contents
-                        int tf = Integer.parseInt(split1[1]) + Integer.parseInt(split2[1]); // df_i + df_j
-                        int p = Integer.parseInt(split1[2]); // pointer to documents file
-                        merged_P.writeBytes(doc_id1 + " " + tf + " " + p + "\n");  // write word_i to merged file along with its df
-                    }
-                    line1_P = post1.readLine();                      // moves the files pointers
-                    line2_P = post2.readLine();                      // from both files
-                }
-                /* -------------- remaining words --------------- */
-                while (line1_P != null) {
-                    merged_P.writeBytes(line1_P + "\n");
-                    line1_P = post1.readLine();
-                }
-                while (line2_P != null) {
-                    merged_P.writeBytes(line2_P + "\n");
-                    line2_P = post2.readLine();
-                }
-            }
-
-            /* ---------------------------------- Vocabulary ---------------------------------------- */
-            while (line1_V != null && line2_V != null) {
                 String[] split1_V = line1_V.split(" "); // space seperated values
                 // get the word
                 String[] split2_V = line2_V.split(" ");
@@ -354,58 +328,163 @@ public class pindexing {
                 String word1_V = split1_V[0];   // works because each line stores a word
                 String word2_V = split2_V[0];   // ...
 
-                if (word1_V.compareTo(word2_V) < 0) {              // word_i < word_j
-                    merged_V.writeBytes(line1_V + "\n");        // write word_i to merged file
-                    line1_V = vocab1.readLine();                 // moves file pointer of file vocab1
-                } else if (word1_V.compareTo(word2_V) > 0) {       // word_i > word_j
-                    merged_V.writeBytes(line2_V + "\n");        // write word_j to merged file
-                    line2_V = vocab2.readLine();                 // moves file pointer of file vocab2
-                } else if (word1_V.compareTo(word2_V) == 0) {        // word_i == word_j , IT'S THE SAME WORD
-                    if (split1_V.length > 1) {
-                        int df = Integer.parseInt(split1_V[1]) + Integer.parseInt(split2_V[1]); // df_i + df_j
-                        int p = Integer.parseInt(split1_V[2]); // pointer to posting file
+                /* ---  Posting : P1 < P2 --- */
+                if (doc_id1.compareTo(doc_id2) < 0) {              // doc_id_i < doc_id_j , D1 < D3
+                    merged_P.writeBytes(line1_P + "\n");        // write doc_id1 to merged file
+
+                    if (word1_V.compareTo(word2_V) < 0) {              // word_i < word_j
+                        int df = Integer.parseInt(split1_V[1]);
                         // update --------------------------------------------------------------------------
+                        long p = merged_P.getFilePointer(); // pointer to posting file
+                        merged_V.writeBytes(word1_V + " " + df + " " + p + "\n");
 
-                        merged_V.writeBytes(word1_V + " " + df + " " + p + "\n");  // write word_i to merged file along with its df
+                        //merged_V.writeBytes(line1_V + "\n");        // write word_i to merged file
+                        while (line1_V != null) {
+                            line1_V = vocab1.readLine();
+                        }
+                        while(line1_P != null){
+                            line1_P = post1.readLine();
+                        }
+                    } else if (word1_V.compareTo(word2_V) == 0) {
+                        int df = Integer.parseInt(split1_V[1]);
+                        // update --------------------------------------------------------------------------
+                        long p = merged_P.getFilePointer(); // pointer to posting file
+                        merged_V.writeBytes(word1_V + " " + df + " " + p + "\n");
+
+                        merged_P.writeBytes(line2_P + "\n");        // write doc_id2 to merged file
+
+                        df = Integer.parseInt(split2_V[1]);
+                        // update --------------------------------------------------------------------------
+                        p = merged_P.getFilePointer(); // pointer to posting file
+                        merged_V.writeBytes(word2_V + " " + df + " " + p + "\n");
+
+                        //merged_V.writeBytes(line1_V + "\n");        // write word_i to merged file
+                        if( line1_V != null){
+                            line1_V = vocab1.readLine();
+                        }
+                        if(line1_P != null){
+                            line1_P = post1.readLine();
+                        }
+                        if(line2_P != null){
+                            line2_P = post2.readLine();
+                        }
+                        if(line2_V != null){
+                            line2_V = vocab2.readLine();
+                        }
+
+                    } else if (word1_V.compareTo(word2_V) > 0) {      // word_i > word_j
+                        long old_p = merged_P.getFilePointer();       // p1 = pointer to posting file
+                        int df = Integer.parseInt(split2_V[1]);
+
+                        merged_P.writeBytes(line2_P + "\n");        // write doc_id2 to merged file
+                        long new_p = merged_P.getFilePointer();       // p2 = pointer to posting file
+                        int df2 = Integer.parseInt(split1_V[1]);
+                        merged_V.writeBytes(word2_V + " " + df + " " + new_p + "\n");
+
+                        merged_V.writeBytes(word1_V + " " + df2 + " " + old_p + "\n");
+
+                        if( line1_V != null){
+                            line1_V = vocab1.readLine();
+                        }
+                        if(line1_P != null){
+                            line1_P = post1.readLine();
+                        }
+                        if(line2_P != null){
+                            line2_P = post2.readLine();
+                        }
+                        if(line2_V != null){
+                            line2_V = vocab2.readLine();
+                        }
+                    } else {
+                        System.out.println("Error in mergePartialIndices");
                     }
-                    line1_V = vocab1.readLine();                      // moves the files pointers
-                    line2_V = vocab2.readLine();                      // from both files
-                } else {
-                    System.out.println("Error in mergePartialIndices");
+                    /* ---  Posting : P2 < P1 --- */
+                } else if (doc_id1.compareTo(doc_id2) > 0) {       // doc_id_i > doc_id_j , D3  < D1
+                    merged_P.writeBytes(line2_P + "\n");        // write word_j to merged file
+
+                    if (word1_V.compareTo(word2_V) < 0) {              // word_i < word_j
+                        long old_p = merged_P.getFilePointer();       // p2 = pointer to posting file
+                        int df = Integer.parseInt(split1_V[1]);
+
+                        merged_P.writeBytes(line1_P + "\n");        // write doc_id1 to merged file
+                        long new_p = merged_P.getFilePointer();       // p1 = pointer to posting file
+                        int df2 = Integer.parseInt(split2_V[1]);
+                        merged_V.writeBytes(word1_V + " " + df + " " + new_p + "\n");
+                        merged_V.writeBytes(word2_V + " " + df2 + " " + old_p + "\n");
+
+                        line1_V = vocab1.readLine();
+                        line1_P = post1.readLine();
+                        line2_V = vocab2.readLine();
+                        line2_P = post2.readLine();
+                    } else if (word1_V.compareTo(word2_V) == 0) {
+                        int df = Integer.parseInt(split2_V[1]);
+                        // update --------------------------------------------------------------------------
+                        long p = merged_P.getFilePointer(); // pointer to posting file
+                        merged_V.writeBytes(word2_V + " " + df + " " + p + "\n");
+
+                        merged_P.writeBytes(line1_P + "\n");        // write doc_id2 to merged file
+
+                        df = Integer.parseInt(split1_V[1]);
+                        // update --------------------------------------------------------------------------
+                        p = merged_P.getFilePointer(); // pointer to posting file
+                        merged_V.writeBytes(word1_V + " " + df + " " + p + "\n");
+
+                        //merged_V.writeBytes(line1_V + "\n");        // write word_i to merged file
+                        line1_V = vocab1.readLine();
+                        line1_P = post1.readLine();
+                        line2_V = vocab2.readLine();
+                        line2_P = post2.readLine();
+                    } else if (word1_V.compareTo(word2_V) > 0) {      // word_i > word_j
+                        int df = Integer.parseInt(split2_V[1]);
+                        // update --------------------------------------------------------------------------
+                        long p = merged_P.getFilePointer(); // pointer to posting file
+                        merged_V.writeBytes(word2_V + " " + df + " " + p + "\n");
+
+                        //merged_V.writeBytes(line1_V + "\n");        // write word_i to merged file
+                        line2_V = vocab2.readLine();
+                        line2_P = post2.readLine();
+                    } else {
+                        System.out.println("Error in mergePartialIndices");
+                    }
+                    /* -- IMPOSSIBLE -- */
+                } else if (doc_id1.compareTo(doc_id2) == 0) {        // word_i == word_j , IT'S THE SAME WORD
+                    System.out.println("Error in mergePartialIndices_ P1~P2");
                 }
-            }
-            /* -------------- remaining words --------------- */
-            while (line1_V != null) {
-                merged_V.writeBytes(line1_V + "\n");
-                line1_V = vocab1.readLine();
-            }
-            while (line2_V != null) {
-                merged_V.writeBytes(line2_V + "\n");
-                line2_V = vocab2.readLine();
-            }
-            /* ---------------------------------------------- */
+                /* -------------- remaining words --------------- */
+                while ((line1_P != null)&& (line1_V != null)) {
+                    merged_P.writeBytes(line1_P + "\n");
+                    line1_P = post1.readLine();
+                    merged_V.writeBytes(line1_V + "\n");
+                    line1_V = vocab1.readLine();
+                }
+                while ((line2_P != null)&&(line2_V != null)) {
+                    merged_P.writeBytes(line2_P + "\n");
+                    line2_P = post2.readLine();
+                    merged_V.writeBytes(line2_V + "\n");
+                    line2_V = vocab2.readLine();
+                }
+                /* ---------------------------------------------- */
+                /* --------------- Cleaning .. ------------------ */
+                // Delete partialIndex1 and partialIndex2
+                vocab1.close();
+                vocab2.close();
+                merged_V.close();
+                post1.close();
+                post2.close();
+                merged_P.close();
 
-            /* --------------- Cleaning .. ------------------ */
-            // Delete partialIndex1 and partialIndex2
-            vocab1.close();
-            vocab2.close();
-            merged_V.close();
-            post1.close();
-            post2.close();
-            merged_P.close();
-
-            new File(partialIndex1_V).delete();
-            new File(partialIndex2_V).delete();
-            new File(partialIndex1_P).delete();
-            new File(partialIndex2_P).delete();
-            /* ---------------------------------------------- */
-            /* ------------------------ Add Merged Queues back ----------------------- */
-            // Add merged file name to queue
-            partialIndicesQueue_V.add(mergedVocab); // new updated queue FOR VOCABULARY
-            partialIndicesQueue_P.add(mergedPost); // new updated queue FOR POSTING
-            /* ----------------------------------------------------------------------- */
+                new File(partialIndex1_V).delete();
+                new File(partialIndex2_V).delete();
+                new File(partialIndex1_P).delete();
+                new File(partialIndex2_P).delete();
+                /* ---------------------------------------------- */
+                /* ------------------------ Add Merged Queues back ----------------------- */
+                // Add merged file name to queue
+                partialIndicesQueue_V.add(mergedVocab); // new updated queue FOR VOCABULARY
+                partialIndicesQueue_P.add(mergedPost); // new updated queue FOR POSTING
+                /* ----------------------------------------------------------------------- */
+            }
         }
-
     }
 
 
@@ -416,7 +495,7 @@ public class pindexing {
 
         try {
             // Specify the directory path
-            String directoryPath = "resources/MiniCollection/diagnosis/Topic_1";
+            String directoryPath = "resources/MiniCollection/";
 
             // Compute occurrences for directory
             compute_occurrences_for_directory(directoryPath);
@@ -428,12 +507,9 @@ public class pindexing {
             System.out.println("Number of Partial Indexes: " + partialIndexes.size());
 
             // Merge the partial indexes - every two indexes
-            if (partialIndexes.size()%2 == 0){
-                mergePartialIndicesVOCAB(partialIndexes);
-            }else{
-                System.out.println("Odd number of partial indexes. Cannot merge.");
-                mergePartialIndicesVOCAB(partialIndexes);
-            }
+            mergeBOTHPartialIndices(partialIndexes, partialPostings);
+
+
 
         } catch (IOException e) {
             e.printStackTrace();

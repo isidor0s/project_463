@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eclipse-userlibraries>
+  <library name="BioReader">
+    <archive path="C:/Users/antig/Documents/GitHub/project_463/libs/BioReader.jar" />
+  </library>
+  <library name="Stemmer">
+    <archive path="C:/Users/antig/Documents/GitHub/project_463/libs/Stemmer.jar" />
+  </library>
+</eclipse-userlibraries>
+
