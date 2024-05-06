@@ -34,7 +34,7 @@ import static Doc_voc_data.document.*;
  */
 public class pindexing {
     /* -------------------------------- Basic Parameters ---------------------------------------- */
-    private static final int THRESHOLD = 100;                 // Threshold -- associated heap size
+    private static final int THRESHOLD = 1000000;                 // Threshold -- associated heap size
     static Vocabulary voc = new Vocabulary();                   // Vocabulary -- holds
     static Queue<String> partialIndexes = new LinkedList<>();   // Queue with partialIndexes' names
     static Queue<String> partialPostings = new LinkedList<>();   // Queue with partialPosting' names
@@ -67,6 +67,7 @@ public class pindexing {
     public static void compute_occurrences_for_directory(String directoryPath) throws IOException {
         File folder = new File(directoryPath);
         File[] list_of_files = folder.listFiles();
+        int threshold_flag = 0;
 
         if ( list_of_files != null) {
             for (File file :  list_of_files) {
@@ -76,26 +77,20 @@ public class pindexing {
                     String fileName = path.getFileName().toString();
                     String id = fileName.substring(0, fileName.lastIndexOf('.'));
 
-                    docFile.writeBytes(String.format("%s %s\n",id,file.getAbsolutePath()));
-//                    System.out.println(id+" "+ docFile.getFilePointer());
-
-
                     //read the file
                     NXMLFileReader xmlFile = new NXMLFileReader(file);
-
                     // finds the unique terms in our xmlFile
                     List<String> uniqueTermsList = findUniqueTerms(xmlFile);
                     List<String> allTerms = findTerms(xmlFile);
 
                     document doc = new document(); //Make a new document class
-                    doc.setDocPointer(docFile.getFilePointer());
+                    doc.setDocPointer(docFile.getFilePointer()); //pass file pointer of document txt
                     voc.getDocList().put(file.getAbsolutePath(), doc);
+                    docFile.writeBytes(String.format("%s %s\n",id,file.getAbsolutePath())); //write the info to documents.txt
                     /* ------------------------ Partial Index Making ... -------------------------------- */
                     for (int i = 0; i < uniqueTermsList.size(); i++) {
                         String word = uniqueTermsList.get(i);
-                        if (voc.getVocabulary().size() >= THRESHOLD && i == uniqueTermsList.size() - 1) {
-                            createPartialIndex();
-                        }
+
                         // fill the Doc_TF <word, total_tf>
                         for ( String term : allTerms ){//this loop calculates the df
                             if(Objects.equals(term, word)) {
@@ -108,13 +103,21 @@ public class pindexing {
                         List<String> documents = voc.getVocabulary().getOrDefault(word, new ArrayList<>()); // for df purposes
                         documents.add(file.getAbsolutePath());
                         voc.getVocabulary().put(word, documents);
+
+                        if (voc.getVocabulary().size() >= THRESHOLD && i == uniqueTermsList.size() - 1) {
+                            System.out.println(voc.getVocabulary().size());
+                            threshold_flag = 1;
+                            createPartialIndex();
+                        }
                         // fills the Vocabulary.vocabulary with a list of docs
                     }
                     /* ----------------------------------------------------------------------------------- */
                 } else if (file.isDirectory()) {
                     compute_occurrences_for_directory(file.getAbsolutePath()); // recursively search subdirectories
+
                 }
             }
+
         } else {
             System.out.println("No files found in the directory.");
         }
@@ -140,7 +143,7 @@ public class pindexing {
         String partialVocab = pathPrefix + "partialVocab" + partialIndexes.size() + ".txt";
         // VocabularyFile.txt ---> < word df >
         // HashMap<String,Long> term_posting_pointer = new HashMap<>(); // points to ... , is located in ...
-        RandomAccessFile posting = new RandomAccessFile(partialPosting, "rw"); // partial Posting
+        RandomAccessFile posting = new RandomAccessFile(partialPosting, "rw"); // partial Postin
         RandomAccessFile vocab = new RandomAccessFile(partialVocab, "rw"); // partial vocabulary
 //        System.out.println("docList" +voc.getDocList().size() + "\n");
         for (String word : sortedWords) {
@@ -161,8 +164,9 @@ public class pindexing {
 
         partialIndexes.add(partialVocab); // saves the name partialIndexFile to the Queue
         partialPostings.add(partialPosting);
-        voc.getVocabulary().clear();
 
+        voc.getVocabulary().clear();
+        voc.getDocList().clear();
     }
 
 
@@ -314,7 +318,7 @@ public class pindexing {
             /* -------------------------------------------------------------------------------------- */
             /* ---------------------------- Merging Posting files ----------------------------------- */
             /* | posting files :  |   < doc_id  , tf  ,  pos  >                                       */
-            while ((line1_P != null && line2_P != null) || ((line1_V != null && line2_V != null))) {
+            while ( ((line1_V != null && line2_V != null)) && (line1_P != null && line2_P != null)  ) {
                 String[] split1 = line1_P.split(" "); // space seperated values
                 String[] split2 = line2_P.split(" ");
 
@@ -495,11 +499,11 @@ public class pindexing {
 
         try {
             // Specify the directory path
-            String directoryPath = "resources/MiniCollection/";
+            String directoryPath = "resources/MedicalCollection/";
 
             // Compute occurrences for directory
             compute_occurrences_for_directory(directoryPath);
-
+            createPartialIndex();
             // Print out the size of the vocabulary
             System.out.println("Vocabulary Size: " + voc.getVocabulary().size());
 
@@ -507,13 +511,14 @@ public class pindexing {
             System.out.println("Number of Partial Indexes: " + partialIndexes.size());
 
             // Merge the partial indexes - every two indexes
-            mergeBOTHPartialIndices(partialIndexes, partialPostings);
+            //mergeBOTHPartialIndices(partialIndexes, partialPostings);
 
 
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         long endTime = System.currentTimeMillis();
         long elapsedTime = endTime - startTime;
         System.out.println("Execution time in milliseconds: " + elapsedTime);

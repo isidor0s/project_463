@@ -155,6 +155,15 @@ public class document {
         List<String> termsList = new ArrayList<>();
         Collections.addAll(termsList, terms);
         List<String> termsList_filtered = FilterOutStopwords("stopwordsEn.txt",termsList);
+
+
+        // garbage collection
+        textBuilder = null;
+        words = null;
+        terms = null;
+        termsList = null;
+        System.gc(); // garbage collection
+
         return termsList_filtered;
     }
 
