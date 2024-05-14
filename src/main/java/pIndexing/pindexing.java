@@ -13,6 +13,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static Doc_voc_data.document.*;
 import static orgg.thread_example.mergeBOTHPartials;
@@ -498,9 +501,6 @@ public class pindexing {
     }
 
 
-
-
-
     /** Function that deletes the files with the given names
      * @param fileNames the names of the files to be deleted
      *
@@ -522,6 +522,12 @@ public class pindexing {
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
 
+        // Create a ScheduledExecutorService that can schedule a task to run after a delay
+        //ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
+        // Schedule a task to shut down the JVM after 1 minute
+        //executor.schedule(() -> System.exit(0), 1, TimeUnit.MINUTES);
+
         try {
             // Specify the directory path
             String directoryPath = "resources/MiniCollection";
@@ -538,6 +544,14 @@ public class pindexing {
             // Merge the partial indexes - every two indexes
             mergeBOTHPartials(partialIndexes, partialPostings);
 
+
+            if (partialIndexes.size() == 1 && partialPostings.size() == 1) {
+                new File(partialIndexes.poll()).renameTo(new File("resources/if/finalMergedVocab.txt"));
+                new File(partialPostings.poll()).renameTo(new File("resources/if/finalMergedPost.txt"));
+            }
+            //print items of each queue
+            System.out.println("Partial Indexes: " + partialIndexes);
+            System.out.println("Partial Postings: " + partialPostings);
 
         } catch (IOException e) {
             e.printStackTrace();

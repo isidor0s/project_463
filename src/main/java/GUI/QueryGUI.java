@@ -1,7 +1,11 @@
 package GUI;import javax.swing.*;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+
+import Search.Search;
 
 public class QueryGUI {
     private JFrame frame;
@@ -11,6 +15,49 @@ public class QueryGUI {
     private JTextField typeField;
     private JButton searchButton;
     private JTextArea resultArea;
+    private int numResultButtons;
+    private JPanel buttonPanel;
+    private JScrollPane scrollPane;
+
+
+    private void generateButtons(){
+        // Create a JPanel to hold the buttons
+        buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridLayout(numResultButtons, 1)); // Set layout as grid with n rows and 1 column
+        buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
+
+        // Create n buttons and add them to the panel
+        for (int i = 0; i < numResultButtons; i++) {
+            // - buttonText -
+            /* * FILE PATH ,
+             * * SNIPPET ,
+             * * SCORE */
+            System.out.println("Creating button " + i);
+            String FILE_PATH = "src/main/java/GUI/QueryGUI.java";
+            String SNIPPET = "public class QueryGUI {";
+            String SCORE = "0.8";
+            String buttonText = "<html><b>" + i + "</b> : <pre>" +
+                    FILE_PATH + "<br>" + SNIPPET + "<br>" + SCORE + "</pre></html>";
+
+            JButton button = new JButton(buttonText);
+            button.setHorizontalAlignment(SwingConstants.LEFT);
+            buttonPanel.add(button);
+        }
+
+        //JScrollBar vertical = new JScrollBar(JScrollBar.VERTICAL);
+        scrollPane = new JScrollPane(buttonPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBounds(780,140, 20, numResultButtons * 80);
+        scrollPane.setVisible(true);
+        // Add the scrollPane to the layout
+        frame.add(scrollPane, BorderLayout.EAST);
+        //frame.add(buttonPanel);
+
+        // Refresh the button panel
+        buttonPanel.revalidate();
+        buttonPanel.repaint();
+        frame.add(buttonPanel, BorderLayout.WEST);
+        frame.setVisible(true);
+    }
 
     public QueryGUI() {
         // Create the main frame
@@ -46,6 +93,22 @@ public class QueryGUI {
                 String result = "Results for query: \t" + query;
                 resultArea.setText(result);
                 // Display the results in the result area
+                Search search = new Search("resources/if/finalMergedVocab.txt", "resources/if/finalMergedPost.txt");
+                try {
+                    search.setNumResults(search.getTotalDf(query)[0]);
+                    numResultButtons = search.getNumResults();
+                    System.out.println("Number of results: " + numResultButtons);
+
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+                try {
+                    // Call the search method with the query
+                    search.search(query);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+                generateButtons();
             }
         });
 
@@ -53,35 +116,8 @@ public class QueryGUI {
         resultArea = new JTextArea();
         resultArea.setBounds(10, 90, 760, 45);
 
-        // create area under result area for n buttons
-        // create n buttons
-        // Define the number of buttons
-        int n = 5;
-
-        // Create a JPanel to hold the buttons
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(n, 1)); // Set layout as grid with n rows and 1 column
-        buttonPanel.setBounds(10, 140, 760, n * 80); // Set bounds, adjust as per your requirement
-
-        // Create n buttons and add them to the panel
-        for (int i = 0; i < n; i++) {
-            // - buttonText -
-            /* * FILE PATH ,
-             * * SNIPPET ,
-             * * SCORE */
-            String FILE_PATH = "src/main/java/GUI/QueryGUI.java";
-            String SNIPPET = "public class QueryGUI {";
-            String SCORE = "0.8";
-            String buttonText = "<html><b>" + i + "</b> : <pre>" +
-                    FILE_PATH + "<br>" + SNIPPET + "<br>" + SCORE + "</pre></html>";
-
-            JButton button = new JButton(buttonText);
-            button.setHorizontalAlignment(SwingConstants.LEFT);
-            buttonPanel.add(button);
-        }
-
         // Add the button panel to the frame
-        frame.add(buttonPanel);
+        //frame.add(buttonPanel);
         // Add the components to the frame
         frame.add(queryLabel);
         frame.add(queryField);
@@ -94,6 +130,7 @@ public class QueryGUI {
         frame.setLayout(null);
         frame.setVisible(true);
     }
+
 
     public static void main(String[] args) {
         new QueryGUI();

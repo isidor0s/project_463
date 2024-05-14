@@ -1,8 +1,9 @@
 package orgg;
-
-import javax.swing.*;
+import java.util.LinkedList;
+import java.util.concurrent.*;
+//import javax.swing.*;
 import java.io.File;
-import java.io.FileNotFoundException;
+//import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -12,18 +13,16 @@ import java.util.concurrent.*;
 
 public class thread_example {
 
-    private static void mergePartialIndices(String partialIndex1_V, String partialIndex2_V, String partialIndex1_P, String partialIndex2_P,int num,Queue<String> partialIndicesQueue_V, Queue<String> partialIndicesQueue_P) throws IOException {
+    private static void mergePartialIndices(String partialIndex1_V, String partialIndex2_V, String partialIndex1_P, String partialIndex2_P, int num, Queue<String> partialIndicesQueue_V, Queue<String> partialIndicesQueue_P) throws IOException {
         RandomAccessFile vocab1 = new RandomAccessFile(partialIndex1_V, "r");
         RandomAccessFile vocab2 = new RandomAccessFile(partialIndex2_V, "r");
         // get number from the file name
 
-
+        //System.out.println("File number: " + num);
         RandomAccessFile merged_V = new RandomAccessFile("resources/if/mergedVocab" + num + ".txt", "rw");
 
-        String line1_V = vocab1.readLine(); // indice 1
-        //System.out.println(line1_V);
-        String line2_V = vocab2.readLine(); // indice 2
-        //System.out.println(line2_V);
+        String line1_V = vocab1.readLine(); // indices 1
+        String line2_V = vocab2.readLine(); // indices 2
         /* -------------------------------------------------------------------------------------- */
         /* ------------------------------------- Posting ---------------------------------------- */
         /* Open partialIndex1 and partialIndex2, read partial vocabulary and posting file names */
@@ -32,8 +31,8 @@ public class thread_example {
         /* Create a new merged file: mergedVocab + partialIndicesQueue.size() + ".txt" */
         RandomAccessFile merged_P = new RandomAccessFile("resources/if/mergedPost" + num + ".txt", "rw");
 
-        String line1_P = post1.readLine(); // indice 1
-        String line2_P = post2.readLine(); // indice 2
+        String line1_P = post1.readLine(); // indices 1
+        String line2_P = post2.readLine(); // indices 2
         /* -------------------------------------------------------------------------------------- */
         /* ---------------------------- Merging Posting files ----------------------------------- */
         /* | posting files :  |   < doc_id  , tf  ,  pos  >                                       */
@@ -169,7 +168,7 @@ public class thread_example {
                     System.out.println("Error in mergePartialIndices");
                 }
                 /* -- IMPOSSIBLE -- */
-            } else if (doc_id1.compareTo(doc_id2) == 0) {        // di == dj , IT'S THE SAME WORD
+            } else if (doc_id1.compareTo(doc_id2) == 0) {        // di == dj , IT'S THE SAME DOC
                 System.out.println("Error in mergePartialIndices_ P1~P2");
             }
             /* -------------- remaining words --------------- */
@@ -201,76 +200,141 @@ public class thread_example {
             new File(partialIndex2_P).delete();
             /* ---------------------------------------------- */
             // Add merged file name to queue
-            //partialIndicesQueue_V.add("resources/if/mergedVocab" + num + ".txt"); // new updated queue FOR VOCABULARY
-            //partialIndicesQueue_P.add("resources/if/mergedPost" + num + ".txt"); // new updated queue FOR POSTING
-            //System.out.println(num);
-            partialIndicesQueue_V.add("resources/if/mergedVocab" + num + ".txt"); // new updated queue FOR VOCABULARY
-            partialIndicesQueue_P.add("resources/if/mergedPost" + num + ".txt"); // new updated queue FOR POSTING
-            /*synchronized (partialIndicesQueue_V) {
-
+            synchronized (partialIndicesQueue_V) {
+                partialIndicesQueue_V.add("resources/if/mergedVocab" + num + ".txt"); // new updated queue FOR VOCABULARY
             }
             synchronized (partialIndicesQueue_P) {
-            }*/
-        } // maybe i need to put here some code - while != null read line of the remaining as well
+                partialIndicesQueue_P.add("resources/if/mergedPost" + num + ".txt"); // new updated queue FOR POSTING
+                System.out.println("Queue has : " + partialIndicesQueue_P.size());
+            }
+            // if the queue has only one element, rename it to finalMergedVocab.txt
+            if (partialIndicesQueue_V.size() == 1 && partialIndicesQueue_P.size() == 1) {
+                new File(partialIndicesQueue_V.poll()).renameTo(new File("resources/if/finalMergedVocab.txt"));
+                new File(partialIndicesQueue_P.poll()).renameTo(new File("resources/if/finalMergedPost.txt"));
+            }
+        } // maybe I need to put here some code - while != null read line of the remaining as well
     }
 
+    /**
+     * Function that Splits a Queue into two halves
+     *
+     * @param originalQueue the starting queue
+     * @param <T>           the type of the elements in the queue( any)
+     * @return an array of two queues
+     */
+    public static <T> Queue<T>[] splitQueue(Queue<T> originalQueue) {
+        int originalSize = originalQueue.size();
+        int halfSize = originalSize / 2;
+
+        Queue<T> firstHalf = new LinkedList<>();
+        Queue<T> secondHalf = new LinkedList<>();
+
+        // Move half of the elements from the originalQueue to the firstHalf
+        for (int i = 0; i < halfSize; i++) {
+            firstHalf.add(originalQueue.poll());
+        }
+
+        // Move the remaining elements to the secondHalf
+        while (!originalQueue.isEmpty()) {
+            secondHalf.add(originalQueue.poll());
+        }
+
+        // Create an array to hold the split queues and return it
+        @SuppressWarnings("unchecked")
+        Queue<T>[] splitQueues = new Queue[]{firstHalf, secondHalf};
+        return splitQueues;
+    }
 
     /**
      * Merge the partial indices
      *
-     * @param partialIndicesQueue_V
-     * @param partialIndicesQueue_P
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ExecutionException
+     * @param partialIndicesQueue_V queue of partial indices for vocabulary
+     * @param partialIndicesQueue_P queue of partial indices for posting
+     * @throws IOException          if an I/O error occurs
+     * @throws InterruptedException if a thread is interrupted
+     * @throws ExecutionException   if the computation threw an exception
      */
-    public static void mergeBOTHPartials(Queue<String> partialIndicesQueue_V, Queue<String> partialIndicesQueue_P) throws IOException, InterruptedException, ExecutionException, ExecutionException {
-        /* ----------------- Merge the partial indices ----------------- */
-        // executer -- thread pool
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        List<Future<Void>> futures = new ArrayList<>();
+    public static void mergeBOTHPartials(Queue<String> partialIndicesQueue_V, Queue<String> partialIndicesQueue_P) throws IOException, InterruptedException, ExecutionException {
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Queue<String> originalQueueVOCAB = partialIndicesQueue_V;
+        Queue<String>[] splitQueuesVOCAB = splitQueue(originalQueueVOCAB);
+
+        Queue<String> originalQueuePOST = partialIndicesQueue_P;
+        Queue<String>[] splitQueuesPOST = splitQueue(originalQueuePOST);
+
+        /* ------------------------- Vocabulary ------------------------ */
+        Queue<String> HalfqueueV1 = splitQueuesVOCAB[0];
+        Queue<String> HalfqueueV1_ = splitQueuesVOCAB[1];
+        /* ---------------------------- Posting ------------------------ */
+        Queue<String> HalfqueueP1 = splitQueuesPOST[0];
+        Queue<String> HalfqueueP1_ = splitQueuesPOST[1];
         /* ------------------------------------------------------------- */
 
-        while ((!partialIndicesQueue_V.isEmpty() && partialIndicesQueue_V.size() > 1) && (!partialIndicesQueue_P.isEmpty() && partialIndicesQueue_P.size() > 1)) {
-            String partialIndex1_V = partialIndicesQueue_V.poll();
-            String partialIndex2_V = partialIndicesQueue_V.poll();
-            String partialIndex1_P = partialIndicesQueue_P.poll();
-            String partialIndex2_P = partialIndicesQueue_P.poll();
+        System.out.println("size OF vocab: " + HalfqueueV1.size());
+        System.out.println("size OF post: " + HalfqueueP1.size());
+        System.out.println("size OF vocab:_ " + HalfqueueV1_.size());
+        System.out.println("size OF post:_ " + HalfqueueP1_.size());
 
-            Callable<Void> task = () -> {
-                // Your merge logic here
-                synchronized (partialIndicesQueue_V) {
-                    System.out.println("Merging " + partialIndex1_V + " and " + partialIndex2_V);
-                }
-                synchronized (partialIndicesQueue_P) {
-                    System.out.println("Merging " + partialIndex1_P + " and " + partialIndex2_P);
-                    mergePartialIndices(partialIndex1_V, partialIndex2_V, partialIndex1_P, partialIndex2_P, partialIndicesQueue_V.size(),partialIndicesQueue_V, partialIndicesQueue_P);
-                }
+        while ((!HalfqueueV1.isEmpty() && !HalfqueueV1_.isEmpty() && HalfqueueV1.size() > 1 && HalfqueueV1_.size() > 1) &&
+                (!HalfqueueP1.isEmpty() && !HalfqueueP1_.isEmpty() && HalfqueueP1.size() > 1 && HalfqueueP1_.size() > 1)) {
+            System.out.println("Started Polling..");
+            /* --- [ x x x x x  | . . . . . ] ---------------- 1st half -----*/
+            String partialIndex1_V = HalfqueueV1.poll();
+            String partialIndex2_V = HalfqueueV1.poll();
+            String partialIndex1_P = HalfqueueP1.poll();
+            String partialIndex2_P = HalfqueueP1.poll();
+            /* --- [ . . . . .  | x x x x x ] ---------------- 2nd half -----*/
+            String partialIndex1_V_ = HalfqueueV1_.poll();
+            String partialIndex2_V_ = HalfqueueV1_.poll();
+            String partialIndex1_P_ = HalfqueueP1_.poll();
+            String partialIndex2_P_ = HalfqueueP1_.poll();
+            /* --------------------------------------------------------------*/
 
+            // Create tasks for merging
+            Callable<Void> task1 = () -> {
+                System.out.println("merging " + partialIndex1_V + " and " + partialIndex2_V);
+                mergePartialIndices(partialIndex1_V, partialIndex2_V, partialIndex1_P, partialIndex2_P, HalfqueueV1.size(), HalfqueueV1, HalfqueueP1);
                 return null;
             };
+            Callable<Void> task2 = () -> {
+                System.out.println("merging " + partialIndex1_V_ + " and " + partialIndex2_V_);
+                mergePartialIndices(partialIndex1_V_, partialIndex2_V_, partialIndex1_P_, partialIndex2_P_, HalfqueueV1_.size(), HalfqueueV1_, HalfqueueP1_);
+                return null;
+            };
+            // Submit tasks to the executor
+            Future<Void> future1 = executor.submit(task1);
+            Future<Void> future2 = executor.submit(task2);
 
-            futures.add(executor.submit(task)); // submit the task to the executor
+            // Wait for both threads to finish
+            future1.get();
+            future2.get();
 
         }
+            executor.shutdown();
 
-        executor.shutdown();
 
-        for (Future<Void> future : futures) {
-            future.get();  // wait for the task to complete
-        }
+//        if (HalfqueueV1.size() > 1 && HalfqueueP1.size() > 1 ) {
+//            System.out.println("---------------------");
+//            System.out.println("size OF vocab: " + HalfqueueV1.size());
+//            System.out.println("size OF post: " + HalfqueueP1.size());
+//            mergeBOTHPartials(HalfqueueV1, HalfqueueP1);
 
-        if(partialIndicesQueue_V.size() > 1 && partialIndicesQueue_P.size() > 1){
-            //leftover files are from 0 to 14
-            //synchronized (partialIndicesQueue_V) {
-            //    mergeBOTHPartials(partialIndicesQueue_V, partialIndicesQueue_P);
-            //}
-            System.out.println(partialIndicesQueue_V.size());
-        } else if (partialIndicesQueue_V.size() == 1 && partialIndicesQueue_P.size() == 1) {
-            new File(partialIndicesQueue_V.poll()).renameTo(new File("resources/if/finalMergedVocab.txt"));
-            new File(partialIndicesQueue_P.poll()).renameTo(new File("resources/if/finalMergedPost.txt"));
-        }
+//        if (HalfqueueV1.size() == 1 && HalfqueueP1.size() == 1) {
+//            new File(HalfqueueV1.poll()).renameTo(new File("resources/if/finalMergedVocab.txt"));
+//            new File(HalfqueueP1.poll()).renameTo(new File("resources/if/finalMergedPost.txt"));
+//        }
+//        if(HalfqueueV1_.size() > 1 && HalfqueueP1_.size() > 1 ){
+//            System.out.println("---------------------");
+//            System.out.println("size OF vocab_: "+HalfqueueV1_.size());
+//            System.out.println("size OF post_: "+HalfqueueP1_.size());
+//            mergeBOTHPartials(HalfqueueV1_, HalfqueueP1_);
+//        }
+//        if (HalfqueueV1_.size() == 1 && HalfqueueP1_.size() == 1) {
+//            new File(HalfqueueV1_.poll()).renameTo(new File("resources/if/finalMergedVocab_.txt"));
+//            new File(HalfqueueP1_.poll()).renameTo(new File("resources/if/finalMergedPost_.txt"));
+//        }
     }
+
 }
 
 
