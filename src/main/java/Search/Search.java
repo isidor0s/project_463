@@ -63,10 +63,6 @@ public class Search {
         return List.of("Result 1", "Result 2", "Result 3");
 
     }
-    public static String performS(String query) {
-        // Perform the search with the given query
-        return "Results for query: \t" + query;
-    }
 
     /**
      * Function that searches for a specific word in the vocabulary file
@@ -79,24 +75,29 @@ public class Search {
 
         String[] queryWords = query.split(" "); // Split the query into words
 
-        for( String queryWord : queryWords) {
+        for( String queryWord : queryWords) {        // for each word of the QUERY
             String line;
             while ((line = vocabFile.readLine()) != null) {
                 String[] splitLine = line.split(" ");
                 String word = splitLine[0];         // get the word from the VOCAB file line
                 if (word.equals(queryWord)) {       // FOUND the query word
                     long postingListPointer = Long.parseLong(splitLine[2]);
+                    int df = Integer.parseInt(splitLine[1]);
                     System.out.println("following pointer.. "+postingListPointer);
                     postingFile.seek(postingListPointer);
-                    String postingList = postingFile.readLine();
-                    String FileName = postingList.split(" ")[0];
-                    System.out.println(FileName);
-                    /* ----- store findings ----- */
-                    FileNames.add(FileName);
-                    Snippets.add("Snippet: .... ");
-                    Scores.add("Score: ");
-                    /* -------------------------- */
-                    System.out.println("The word '" + query + "' appears in documents: " + postingList);
+                    for (int i = 0; i < df; i++) { // read the posting list (df lines
+
+                        String postingList = postingFile.readLine();
+                        String FileName = postingList.split(" ")[0];
+                        System.out.println(FileName);
+                        /* ----- store findings ----- */
+                        FileNames.add(FileName);
+                        Snippets.add("Snippet: .... ");
+                        Scores.add("Score: ");
+                        /* -------------------------- */
+                        System.out.println("The word '" + queryWord + "' appears in documents: " + postingList);
+                    }
+
                     //break;
                 }
             }

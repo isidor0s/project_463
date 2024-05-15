@@ -21,14 +21,23 @@ public class QueryGUI {
     private Search search;
 
 
+    /**
+     * Function that generates n * ResultButtons in the main area of the Display,
+     * to showcase each individual file and its metrics ( filepath - snippet - score).
+     * -------------------------------------------------------------------------------
+     * Items are added on the ---> buttonPane
+     * n - numResultButton
+     * -------------------------------------------------------------------------------
+     */
     private void generateButtons(){
         // Create a JPanel to hold the buttons
+        buttonPanel.removeAll();
         buttonPanel = new JPanel();
         buttonPanel.setLayout(new GridLayout(numResultButtons, 1)); // Set layout as grid with n rows and 1 column
         buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
 
         // Create n buttons and add them to the panel
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < numResultButtons; i++) {   // 7 -- will be replaced with numButtons
             // - buttonText -
             /* * FILE PATH ,
              * * SNIPPET ,
@@ -62,6 +71,7 @@ public class QueryGUI {
     }
 
     public QueryGUI() {
+        numResultButtons=0;
         // Create the main frame
         frame = new JFrame("Query System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -83,6 +93,10 @@ public class QueryGUI {
         typeField = new JTextField(20);
         typeField.setBounds(70, 50, 300, 30);
 
+        buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridLayout(numResultButtons, 1)); // Set layout as grid with n rows and 1 column
+        buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
+
         // Create the search button
         searchButton = new JButton("Search");
         searchButton.setBounds(380, 10, 100, 30);
@@ -95,7 +109,7 @@ public class QueryGUI {
                 String result = "Results for query: \t" + query;
                 resultArea.setText(result);
                 // Display the results in the result area
-                search = new Search("resources/if/finalMergedVocab.txt", "resources/if/finalMergedPost.txt");
+                search = new Search("resources/if/VocabularyFile.txt", "resources/if/PostingFile.txt");
                 try {
                     search.setNumResults(search.getTotalDf(query)[0]);
                     numResultButtons = search.getNumResults();
@@ -109,6 +123,9 @@ public class QueryGUI {
                     search.search(query);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
+                }
+                if (buttonPanel != null) {
+                    frame.remove(buttonPanel);
                 }
                 generateButtons();
             }

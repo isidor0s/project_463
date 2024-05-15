@@ -349,6 +349,7 @@ public class thread_example {
 //            new File(HalfqueueV1_.poll()).renameTo(new File("resources/if/finalMergedVocab_.txt"));
 //            new File(HalfqueueP1_.poll()).renameTo(new File("resources/if/finalMergedPost_.txt"));
 //        }
+        System.out.println("finitooooooooooooooooooooooooooooooooooooooo");
     }
 
 }
