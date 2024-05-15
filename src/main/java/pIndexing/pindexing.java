@@ -60,6 +60,7 @@ public class pindexing {
     public static Queue<String> getPartialIndexes() {
         return partialIndexes;
     }
+    public static Queue<String> getPartialPostings() { return partialPostings;}
     /* ------------------------------------------------------------------------------------------- */
 
 
@@ -140,7 +141,7 @@ public class pindexing {
      * -------------------------------------------------------------------------------
      * @throws IOException due to the RandomAccessFile creation
      */
-    private static void createPartialIndex() throws IOException {
+    public static void createPartialIndex() throws IOException {
         List<String> sortedWords = new ArrayList<>(voc.getVocabulary().keySet());
         Collections.sort(sortedWords);
         String pathPrefix = "resources/if/";

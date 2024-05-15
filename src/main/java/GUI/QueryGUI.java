@@ -18,6 +18,7 @@ public class QueryGUI {
     private int numResultButtons;
     private JPanel buttonPanel;
     private JScrollPane scrollPane;
+    private Search search;
 
 
     private void generateButtons(){
@@ -27,15 +28,16 @@ public class QueryGUI {
         buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
 
         // Create n buttons and add them to the panel
-        for (int i = 0; i < numResultButtons; i++) {
+        for (int i = 0; i < 7; i++) {
             // - buttonText -
             /* * FILE PATH ,
              * * SNIPPET ,
              * * SCORE */
             System.out.println("Creating button " + i);
-            String FILE_PATH = "src/main/java/GUI/QueryGUI.java";
-            String SNIPPET = "public class QueryGUI {";
-            String SCORE = "0.8";
+
+            String FILE_PATH = search.getFileNames().get(i); // updating filenames..
+            String SNIPPET = search.getSnippets().get(i);
+            String SCORE = search.getScores().get(i);
             String buttonText = "<html><b>" + i + "</b> : <pre>" +
                     FILE_PATH + "<br>" + SNIPPET + "<br>" + SCORE + "</pre></html>";
 
@@ -93,7 +95,7 @@ public class QueryGUI {
                 String result = "Results for query: \t" + query;
                 resultArea.setText(result);
                 // Display the results in the result area
-                Search search = new Search("resources/if/finalMergedVocab.txt", "resources/if/finalMergedPost.txt");
+                search = new Search("resources/if/finalMergedVocab.txt", "resources/if/finalMergedPost.txt");
                 try {
                     search.setNumResults(search.getTotalDf(query)[0]);
                     numResultButtons = search.getNumResults();

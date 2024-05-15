@@ -3,6 +3,7 @@ package Search;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,17 +20,26 @@ public class Search {
     String PostingFileName;             // correspond to the posting file
     String[] Query;                     // correspond to the query written by the user
     int numResults;
+    List<String> FileNames;             // correspond to the results of the search
+    List<String> Snippets;              // correspond to the snippets of the results
+    List<String> Scores;                // correspond to the scores of the results
 
     /* ---------------------------- Getters ------------------------ */
     public String getVocabularyFileName() { return VocabularyFileName; }
     public String getPostingFileName() { return PostingFileName; }
     public String[] getQuery() { return Query; }
     public int getNumResults() { return numResults; }
+    public List<String> getFileNames() { return FileNames; }
+    public List<String> getSnippets() { return Snippets; }
+    public List<String> getScores() { return Scores; }
     /* ---------------------------- Setters ------------------------ */
     public void setVocabularyFileName(String vocabularyFileName) { VocabularyFileName = vocabularyFileName; }
     public void setPostingFileName(String postingFileName) { PostingFileName = postingFileName; }
     public void setQuery(String[] query) { Query = query; }
     public void setNumResults(int numResults) { this.numResults = numResults; }
+    public void setFileNames(List<String> fileNames) { FileNames = fileNames; }
+    public void setSnippets(List<String> snippets) { Snippets = snippets; }
+    public void setScores(List<String> scores) { Scores = scores; }
     /* -------------------------- Constructors --------------------- */
     /**
      * Constructor
@@ -40,6 +50,9 @@ public class Search {
         this.VocabularyFileName = vocabFilePath;
         this.PostingFileName = postingFilePath;
         this.numResults=0;
+        this.FileNames = new ArrayList<>();
+        this.Snippets = new ArrayList<>();
+        this.Scores = new ArrayList<>();
     }
     /*--------------------------------------------------------------------*/
 
@@ -76,10 +89,15 @@ public class Search {
                     System.out.println("following pointer.. "+postingListPointer);
                     postingFile.seek(postingListPointer);
                     String postingList = postingFile.readLine();
-                    String firstString = postingList.split(" ")[0];
-                    System.out.println(firstString);
+                    String FileName = postingList.split(" ")[0];
+                    System.out.println(FileName);
+                    /* ----- store findings ----- */
+                    FileNames.add(FileName);
+                    Snippets.add("Snippet: .... ");
+                    Scores.add("Score: ");
+                    /* -------------------------- */
                     System.out.println("The word '" + query + "' appears in documents: " + postingList);
-                    break;
+                    //break;
                 }
             }
         }

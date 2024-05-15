@@ -33,6 +33,7 @@ public class thread_example {
 
         String line1_P = post1.readLine(); // indices 1
         String line2_P = post2.readLine(); // indices 2
+
         /* -------------------------------------------------------------------------------------- */
         /* ---------------------------- Merging Posting files ----------------------------------- */
         /* | posting files :  |   < doc_id  , tf  ,  pos  >                                       */
@@ -141,7 +142,7 @@ public class thread_example {
                     int df = Integer.parseInt(split2_V[1]);
                     // update --------------------------------------------------------------------------
                     long p = merged_P.getFilePointer(); // pointer to posting file
-                    merged_V.writeBytes(word2_V + " " + df + " " + p + "\n");
+                        merged_V.writeBytes(word2_V + " " + df + " " + p + "\n");
 
                     merged_P.writeBytes(line1_P + "\n");        // write doc_id2 to merged file
 
@@ -175,14 +176,22 @@ public class thread_example {
             while ((line1_P != null) && (line1_V != null)) {
                 merged_P.writeBytes(line1_P + "\n");
                 line1_P = post1.readLine();
-                merged_V.writeBytes(line1_V + "\n");
-                line1_V = vocab1.readLine();
+                if (line1_P == null) {
+                    break;
+                }else{
+                    merged_V.writeBytes(line1_V + "\n");
+                    line1_V = vocab1.readLine();
+                }
             }
             while ((line2_P != null) && (line2_V != null)) {
                 merged_P.writeBytes(line2_P + "\n");
                 line2_P = post2.readLine();
-                merged_V.writeBytes(line2_V + "\n");
-                line2_V = vocab2.readLine();
+                if(line2_P == null){
+                    break;
+                } else{
+                    merged_V.writeBytes(line2_V + "\n");
+                    line2_V = vocab2.readLine();
+                }
             }
             /* ---------------------------------------------- */
             /* --------------- Cleaning .. ------------------ */
@@ -202,10 +211,11 @@ public class thread_example {
             // Add merged file name to queue
             synchronized (partialIndicesQueue_V) {
                 partialIndicesQueue_V.add("resources/if/mergedVocab" + num + ".txt"); // new updated queue FOR VOCABULARY
+                System.out.println("Queue V has : " + partialIndicesQueue_P.size());
             }
             synchronized (partialIndicesQueue_P) {
                 partialIndicesQueue_P.add("resources/if/mergedPost" + num + ".txt"); // new updated queue FOR POSTING
-                System.out.println("Queue has : " + partialIndicesQueue_P.size());
+                System.out.println("Queue P has : " + partialIndicesQueue_P.size());
             }
             // if the queue has only one element, rename it to finalMergedVocab.txt
             if (partialIndicesQueue_V.size() == 1 && partialIndicesQueue_P.size() == 1) {
@@ -293,12 +303,14 @@ public class thread_example {
             // Create tasks for merging
             Callable<Void> task1 = () -> {
                 System.out.println("merging " + partialIndex1_V + " and " + partialIndex2_V);
-                mergePartialIndices(partialIndex1_V, partialIndex2_V, partialIndex1_P, partialIndex2_P, HalfqueueV1.size(), HalfqueueV1, HalfqueueP1);
+                System.out.println("merging " + partialIndex1_P + " and " + partialIndex2_P);
+                mergePartialIndices(partialIndex1_V, partialIndex2_V, partialIndex1_P, partialIndex2_P, HalfqueueP1.size(), HalfqueueV1, HalfqueueP1);
                 return null;
             };
             Callable<Void> task2 = () -> {
-                System.out.println("merging " + partialIndex1_V_ + " and " + partialIndex2_V_);
-                mergePartialIndices(partialIndex1_V_, partialIndex2_V_, partialIndex1_P_, partialIndex2_P_, HalfqueueV1_.size(), HalfqueueV1_, HalfqueueP1_);
+                System.out.println("merging " + partialIndex1_V_ + " and " + partialIndex2_V_+ " __");
+                System.out.println("merging " + partialIndex1_P_ + " and " + partialIndex2_P_+ " __");
+                mergePartialIndices(partialIndex1_V_, partialIndex2_V_, partialIndex1_P_, partialIndex2_P_, HalfqueueP1_.size(), HalfqueueV1_, HalfqueueP1_);
                 return null;
             };
             // Submit tasks to the executor
@@ -310,9 +322,12 @@ public class thread_example {
             future2.get();
 
         }
-            executor.shutdown();
+        executor.shutdown();
 
-
+        System.out.println("size OF vocab: " + HalfqueueV1.size());
+        System.out.println("size OF post: " + HalfqueueP1.size());
+        System.out.println("size OF vocab_: " + HalfqueueV1_.size());
+        System.out.println("size OF post_: " + HalfqueueP1_.size());
 //        if (HalfqueueV1.size() > 1 && HalfqueueP1.size() > 1 ) {
 //            System.out.println("---------------------");
 //            System.out.println("size OF vocab: " + HalfqueueV1.size());
@@ -330,6 +345,7 @@ public class thread_example {
 //            mergeBOTHPartials(HalfqueueV1_, HalfqueueP1_);
 //        }
 //        if (HalfqueueV1_.size() == 1 && HalfqueueP1_.size() == 1) {
+//            System.out.println("Merging the last two files");
 //            new File(HalfqueueV1_.poll()).renameTo(new File("resources/if/finalMergedVocab_.txt"));
 //            new File(HalfqueueP1_.poll()).renameTo(new File("resources/if/finalMergedPost_.txt"));
 //        }

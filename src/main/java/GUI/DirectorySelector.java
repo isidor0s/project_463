@@ -1,23 +1,22 @@
 package GUI;
-import static pIndexing.pindexing.compute_occurrences_for_directory;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
-import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-
+import pIndexing.pindexing;
+import static orgg.thread_example.mergeBOTHPartials;
+import static pIndexing.pindexing.*;
 
 public class DirectorySelector extends JFrame {
     private JButton button;
     private JLabel label;
     private JProgressBar progressBar;
     private JButton queryButton; // New button for QueryGUI
-
+    private pindexing pindexing;
 
     public DirectorySelector() {
         button = new JButton("Select Directory");
@@ -53,7 +52,19 @@ public class DirectorySelector extends JFrame {
                         @Override
                         protected List<String> doInBackground() throws Exception {
                             compute_occurrences_for_directory(file.getAbsolutePath());
+                            pindexing = new pindexing();
+                            pindexing.createPartialIndex();
+                            mergeBOTHPartials(pIndexing.pindexing.getPartialIndexes(), pIndexing.pindexing.getPartialPostings());
+
+                            if (pIndexing.pindexing.getPartialIndexes().size() == 1 && pIndexing.pindexing.getPartialPostings().size() == 1) {
+                                new File(pIndexing.pindexing.getPartialIndexes().poll()).renameTo(new File("resources/if/finalMergedVocab.txt"));
+                                new File(pIndexing.pindexing.getPartialPostings().poll()).renameTo(new File("resources/if/finalMergedPost.txt"));
+                            }
+                            //print items of each queue
+                            System.out.println("Partial Indexes: " + pIndexing.pindexing.getPartialIndexes());
+                            System.out.println("Partial Postings: " + pIndexing.pindexing.getPartialPostings());
                             return List.of("Result 1", "Result 2", "Result 3");
+
                         }
                         @Override
                         protected void done() {
