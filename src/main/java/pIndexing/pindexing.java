@@ -10,8 +10,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static Doc_voc_data.document.*;
+import static orgg.thread_example.mergeBOTHPartials;
 //import static PostingFile.PostingFile.compute_PostingFile;
 
 
@@ -32,10 +37,12 @@ import static Doc_voc_data.document.*;
  */
 public class pindexing {
     /* -------------------------------- Basic Parameters ---------------------------------------- */
+
     private static final int THRESHOLD = 10000;                 // Threshold -- associated heap size
+
     static Vocabulary voc = new Vocabulary();                   // Vocabulary -- holds
     static Queue<String> partialIndexes = new LinkedList<>();   // Queue with partialIndexes' names
-    static Queue<String> partialPostings = new LinkedList<>();   // Queue with partialPosting' names
+    static Queue<String> partialPostings = new LinkedList<>();  // Queue with partialPosting' names
     static int indexCount = 0;                                  // no use yet
     static RandomAccessFile docFile;                            // creates DocumentsFile.txt with the 3 important info - filename, filepath, tf*idf
     static int docsNumber = 0; // number of documents in the collection
@@ -54,6 +61,7 @@ public class pindexing {
     public static Queue<String> getPartialIndexes() {
         return partialIndexes;
     }
+    public static Queue<String> getPartialPostings() { return partialPostings;}
     /* ------------------------------------------------------------------------------------------- */
 
 
@@ -105,7 +113,9 @@ public class pindexing {
                         voc.getVocabulary().put(word, documents);
 
                         if (voc.getVocabulary().size() >= THRESHOLD && i == uniqueTermsList.size() - 1) {
+
 //                            System.out.println(voc.getVocabulary().size());
+
                             threshold_flag = 1;
                             createPartialIndex();
                         }
@@ -135,7 +145,7 @@ public class pindexing {
      * -------------------------------------------------------------------------------
      * @throws IOException due to the RandomAccessFile creation
      */
-    private static void createPartialIndex() throws IOException {
+    public static void createPartialIndex() throws IOException {
         List<String> sortedWords = new ArrayList<>(voc.getVocabulary().keySet());
         Collections.sort(sortedWords);
         String pathPrefix = "resources/if/";
@@ -286,7 +296,8 @@ public class pindexing {
      * @throws IOException ioexception
      */
 
-    public static void mergeBOTHPartialIndices(Queue<String> partialIndicesQueue_V, Queue <String> partialIndicesQueue_P) throws IOException {
+
+    public static void mergeBOTHPartials1(Queue<String> partialIndicesQueue_V, Queue <String> partialIndicesQueue_P) throws IOException {
 
         while ((!partialIndicesQueue_V.isEmpty() && partialIndicesQueue_V.size() > 1) && (!partialIndicesQueue_P.isEmpty() && partialIndicesQueue_P.size() > 1)) {
             /* ------------------------------------ Vocabulary -------------------------------------- */
@@ -323,14 +334,13 @@ public class pindexing {
                 String[] split1 = line1_P.split(" "); // space seperated values
                 String[] split2 = line2_P.split(" ");
 
-                String doc_id1 = split1[0];   // works because each line stores a word
+                String doc_id1 = split1[0];   // get doc_ids
                 String doc_id2 = split2[0];   // ...
 
                 String[] split1_V = line1_V.split(" "); // space seperated values
-                // get the word
-                String[] split2_V = line2_V.split(" ");
+                String[] split2_V = line2_V.split(" "); // get the words
 
-                String word1_V = split1_V[0];   // works because each line stores a word
+                String word1_V = split1_V[0];   // get words
                 String word2_V = split2_V[0];   // ...
                 System.out.println("case1");
                 /* ---  Posting : P1 < P2 --- */
@@ -344,14 +354,14 @@ public class pindexing {
 
                         merged_V.writeBytes(word1_V + " " + df + " " + p + "\n");
 
-                        //merged_V.writeBytes(line1_V + "\n");        // write word_i to merged file
+
                         while (line1_V != null) {
                             line1_V = vocab1.readLine();
                         }
                         while(line1_P != null){
                             line1_P = post1.readLine();
                         }
-                    } else if (word1_V.compareTo(word2_V) == 0) {
+                    } else if (word1_V.compareTo(word2_V) == 0) {       // word_i == word_j
                         int df = Integer.parseInt(split1_V[1]);
                         // update --------------------------------------------------------------------------
 
@@ -454,7 +464,7 @@ public class pindexing {
                         System.out.println("Error in mergePartialIndices");
                     }
                     /* -- IMPOSSIBLE -- */
-                } else if (doc_id1.compareTo(doc_id2) == 0) {        // word_i == word_j , IT'S THE SAME WORD
+                } else if (doc_id1.compareTo(doc_id2) == 0) {        // di == dj , IT'S THE SAME WORD
                     System.out.println("Error in mergePartialIndices_ P1~P2");
                 }
                 /* -------------- remaining words --------------- */
@@ -490,7 +500,12 @@ public class pindexing {
                 partialIndicesQueue_V.add(mergedVocab); // new updated queue FOR VOCABULARY
                 partialIndicesQueue_P.add(mergedPost); // new updated queue FOR POSTING
                 /* ----------------------------------------------------------------------- */
-            }
+            } // maybe i need to put here some code - while != null read line of the remaining as well
+        }
+
+        if (partialIndicesQueue_V.size() == 1 && partialIndicesQueue_P.size() == 1) {
+            new File(partialIndicesQueue_V.poll()).renameTo(new File("resources/if/finalMergedVocab.txt"));
+            new File(partialIndicesQueue_P.poll()).renameTo(new File("resources/if/finalMergedPost.txt"));
         }
     }
 
@@ -574,6 +589,7 @@ public class pindexing {
     }
 
 
+
     // Function to calculate IDF (Inverse Document Frequency)
     public static double calculateIDF(int df, int totalDocuments) {
         // Implement IDF calculation here, e.g., log(totalDocuments / df)
@@ -592,6 +608,21 @@ public class pindexing {
             int df = Integer.parseInt(parts[1]);
             long pointer = Long.parseLong(parts[2]);
             vocabulary.put(term, new term_data(df, pointer));
+
+    /** Function that deletes the files with the given names
+     * @param fileNames the names of the files to be deleted
+     *
+     */
+    private static void deleteFiles(String... fileNames) {
+        for (String fileName : fileNames) {
+            File file = new File(fileName);
+            if (file.exists()) {
+                try {
+                    Files.deleteIfExists(file.toPath());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -599,9 +630,17 @@ public class pindexing {
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
 
+        // Create a ScheduledExecutorService that can schedule a task to run after a delay
+        //ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
+        // Schedule a task to shut down the JVM after 1 minute
+        //executor.schedule(() -> System.exit(0), 1, TimeUnit.MINUTES);
+
         try {
             // Specify the directory path
+
             String directoryPath = "resources/MiniCollection/";
+
 
             // Compute occurrences for directory
             compute_occurrences_for_directory(directoryPath);
@@ -611,10 +650,19 @@ public class pindexing {
             System.out.println("Number of Partial Indexes: " + partialIndexes.size());
 
             // Merge the partial indexes - every two indexes
+
             Object mutex = new Object();
             synchronized (mutex) {
                 mergeBOTHPartialIndices(partialIndexes, partialPostings);
 
+
+            if (partialIndexes.size() == 1 && partialPostings.size() == 1) {
+                new File(partialIndexes.poll()).renameTo(new File("resources/if/finalMergedVocab.txt"));
+                new File(partialPostings.poll()).renameTo(new File("resources/if/finalMergedPost.txt"));
+            }
+            //print items of each queue
+            System.out.println("Partial Indexes: " + partialIndexes);
+            System.out.println("Partial Postings: " + partialPostings);
 
             }
             long midtime = System.currentTimeMillis();
@@ -664,6 +712,10 @@ public class pindexing {
             System.out.println("Calculation time: " + (calcalation_time - loadtime) + " milliseconds");
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
         long endTime = System.currentTimeMillis();
