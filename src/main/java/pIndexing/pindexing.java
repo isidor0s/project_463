@@ -2,12 +2,10 @@ package pIndexing;
 
 import Doc_voc_data.Vocabulary;
 import Doc_voc_data.document;
+import Doc_voc_data.term_data;
 import gr.uoc.csd.hy463.NXMLFileReader;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,12 +37,15 @@ import static orgg.thread_example.mergeBOTHPartials;
  */
 public class pindexing {
     /* -------------------------------- Basic Parameters ---------------------------------------- */
-    private static final int THRESHOLD = 1000;               // Threshold -- associated heap size
+
+    private static final int THRESHOLD = 10000;                 // Threshold -- associated heap size
+
     static Vocabulary voc = new Vocabulary();                   // Vocabulary -- holds
     static Queue<String> partialIndexes = new LinkedList<>();   // Queue with partialIndexes' names
     static Queue<String> partialPostings = new LinkedList<>();  // Queue with partialPosting' names
     static int indexCount = 0;                                  // no use yet
     static RandomAccessFile docFile;                            // creates DocumentsFile.txt with the 3 important info - filename, filepath, tf*idf
+    static int docsNumber = 0; // number of documents in the collection
     /* ------------------------------------------------------------------------------------------ */
     static {
         try {
@@ -93,6 +94,7 @@ public class pindexing {
                     doc.setDocPointer(docFile.getFilePointer()); //pass file pointer of document txt
                     voc.getDocList().put(file.getAbsolutePath(), doc);
                     docFile.writeBytes(String.format("%s %s\n",id,file.getAbsolutePath())); //write the info to documents.txt
+                    docsNumber++;
                     /* ------------------------ Partial Index Making ... -------------------------------- */
                     for (int i = 0; i < uniqueTermsList.size(); i++) {
                         String word = uniqueTermsList.get(i);
@@ -111,7 +113,9 @@ public class pindexing {
                         voc.getVocabulary().put(word, documents);
 
                         if (voc.getVocabulary().size() >= THRESHOLD && i == uniqueTermsList.size() - 1) {
-                            //System.out.println(voc.getVocabulary().size());
+
+//                            System.out.println(voc.getVocabulary().size());
+
                             threshold_flag = 1;
                             createPartialIndex();
                         }
@@ -291,6 +295,8 @@ public class pindexing {
      * @param partialIndicesQueue_P queue with partial indexes of the posting files
      * @throws IOException ioexception
      */
+
+
     public static void mergeBOTHPartials1(Queue<String> partialIndicesQueue_V, Queue <String> partialIndicesQueue_P) throws IOException {
 
         while ((!partialIndicesQueue_V.isEmpty() && partialIndicesQueue_V.size() > 1) && (!partialIndicesQueue_P.isEmpty() && partialIndicesQueue_P.size() > 1)) {
@@ -336,15 +342,16 @@ public class pindexing {
 
                 String word1_V = split1_V[0];   // get words
                 String word2_V = split2_V[0];   // ...
-
+                System.out.println("case1");
                 /* ---  Posting : P1 < P2 --- */
                 if (doc_id1.compareTo(doc_id2) < 0) {              // doc_id_i < doc_id_j , D1 < D3
+                    long p = merged_P.getFilePointer(); // pointer to posting file
                     merged_P.writeBytes(line1_P + "\n");        // write doc_id1 to merged file
 
                     if (word1_V.compareTo(word2_V) < 0) {              // word_i < word_j
                         int df = Integer.parseInt(split1_V[1]);
                         // update --------------------------------------------------------------------------
-                        long p = merged_P.getFilePointer(); // pointer to posting file
+
                         merged_V.writeBytes(word1_V + " " + df + " " + p + "\n");
 
 
@@ -357,14 +364,14 @@ public class pindexing {
                     } else if (word1_V.compareTo(word2_V) == 0) {       // word_i == word_j
                         int df = Integer.parseInt(split1_V[1]);
                         // update --------------------------------------------------------------------------
-                        long p = merged_P.getFilePointer(); // pointer to posting file
-                        merged_V.writeBytes(word1_V + " " + df + " " + p + "\n");
 
+                        merged_V.writeBytes(word1_V + " " + df + " " + p + "\n");
+                        p = merged_P.getFilePointer(); // pointer to posting file
                         merged_P.writeBytes(line2_P + "\n");        // write doc_id2 to merged file
 
                         df = Integer.parseInt(split2_V[1]);
                         // update --------------------------------------------------------------------------
-                        p = merged_P.getFilePointer(); // pointer to posting file
+
                         merged_V.writeBytes(word2_V + " " + df + " " + p + "\n");
 
                         //merged_V.writeBytes(line1_V + "\n");        // write word_i to merged file
@@ -384,9 +391,9 @@ public class pindexing {
                     } else if (word1_V.compareTo(word2_V) > 0) {      // word_i > word_j
                         long old_p = merged_P.getFilePointer();       // p1 = pointer to posting file
                         int df = Integer.parseInt(split2_V[1]);
-
-                        merged_P.writeBytes(line2_P + "\n");        // write doc_id2 to merged file
                         long new_p = merged_P.getFilePointer();       // p2 = pointer to posting file
+                        merged_P.writeBytes(line2_P + "\n");        // write doc_id2 to merged file
+
                         int df2 = Integer.parseInt(split1_V[1]);
                         merged_V.writeBytes(word2_V + " " + df + " " + new_p + "\n");
 
@@ -409,14 +416,15 @@ public class pindexing {
                     }
                     /* ---  Posting : P2 < P1 --- */
                 } else if (doc_id1.compareTo(doc_id2) > 0) {       // doc_id_i > doc_id_j , D3  < D1
+                    long old_p = merged_P.getFilePointer();       // p2 = pointer to posting file
                     merged_P.writeBytes(line2_P + "\n");        // write word_j to merged file
 
                     if (word1_V.compareTo(word2_V) < 0) {              // word_i < word_j
-                        long old_p = merged_P.getFilePointer();       // p2 = pointer to posting file
-                        int df = Integer.parseInt(split1_V[1]);
 
-                        merged_P.writeBytes(line1_P + "\n");        // write doc_id1 to merged file
+                        int df = Integer.parseInt(split1_V[1]);
                         long new_p = merged_P.getFilePointer();       // p1 = pointer to posting file
+                        merged_P.writeBytes(line1_P + "\n");        // write doc_id1 to merged file
+
                         int df2 = Integer.parseInt(split2_V[1]);
                         merged_V.writeBytes(word1_V + " " + df + " " + new_p + "\n");
                         merged_V.writeBytes(word2_V + " " + df2 + " " + old_p + "\n");
@@ -501,6 +509,105 @@ public class pindexing {
         }
     }
 
+    /**
+     * Function that loads the vocabulary from a file to a map
+     * @param vocabularyFilePath
+     * @return
+     * @throws IOException
+     */
+    public static Map<String, term_data> loadVocabulary(String vocabularyFilePath) throws IOException {
+        Map<String, term_data> vocabulary = new HashMap<>();
+        final int CHUNK_SIZE = 1000; // Number of lines to read at a time
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(vocabularyFilePath))) {
+            List<String> lines = new ArrayList<>(CHUNK_SIZE);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+                if (lines.size() == CHUNK_SIZE) {
+                    processLines(lines, vocabulary);
+                    lines.clear();
+                }
+            }
+            // Process remaining lines if any
+            if (!lines.isEmpty()) {
+                processLines(lines, vocabulary);
+            }
+        }
+
+        return vocabulary;
+    }
+    public static HashMap<Long,Double> calculateNormForAllDocs(Map<String,term_data> vocabulary, String postingFilePath, String docFilePath) {
+        HashMap<Long, Double> docNorms = new HashMap<>();
+        try {
+            RandomAccessFile postingFile = new RandomAccessFile(postingFilePath, "r");
+            RandomAccessFile docFile = new RandomAccessFile(docFilePath, "rw");
+
+            // Iterate through each line in the vocabulary file
+            for (Map.Entry<String, term_data> entry : vocabulary.entrySet()) {
+                String vocabularyLine = entry.getKey();
+                String[] vocabularyParts = vocabularyLine.split(" ");
+                String term = vocabularyParts[0];
+                int df = entry.getValue().getDf();
+                long pointer = entry.getValue().getPointer();
+                System.out.println("term "+term);
+                // Move to the appropriate position in the posting file
+                System.out.println("pointer "+pointer);
+                postingFile.seek(pointer);
+
+
+                // Iterate through postings for the term
+                for (int i = 0; i < df; i++) {
+                    String postingLine = postingFile.readLine();
+                    String[] parts = postingLine.split(" ");
+                    System.out.println("postcontent "+postingLine);
+                    int tf = Integer.parseInt(parts[1]); // doc_id, tf, pointer
+                    long docPointer = Long.parseLong(parts[2]);
+                    // Calculate IDF and term weight
+                    double idf = calculateIDF(df, docsNumber); // You need to define totalDocuments
+                    double termWeight = tf * idf;
+                    docFile.seek(docPointer);
+                    String docLine = docFile.readLine();
+                    String[] docParts = docLine.split(" ");
+                    long docId = Long.parseLong(docParts[0]);
+
+                    // Accumulate the squares of term weights to calculate the document norm
+                    double squaredTermWeight = Math.pow(termWeight, 2);
+                    double currentNorm = docNorms.getOrDefault(docPointer, 0.0);
+                    double updatedNorm = currentNorm + squaredTermWeight;
+//                    System.out.println( docId +" UpdatedNorm "+ updatedNorm+ " Norm: " + currentNorm + " Term Weight: " + squaredTermWeight);
+                    docNorms.put(docPointer, updatedNorm);
+                }
+            }
+            postingFile.close();
+            docFile.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return docNorms;
+    }
+
+
+
+    // Function to calculate IDF (Inverse Document Frequency)
+    public static double calculateIDF(int df, int totalDocuments) {
+        // Implement IDF calculation here, e.g., log(totalDocuments / df)
+        return Math.log(((double) totalDocuments / df)/Math.log(2));
+    }
+
+    /**
+     * Function to process the lines read from the vocabulary file
+     * @param lines
+     * @param vocabulary
+     */
+    private static void processLines(List<String> lines, Map<String, term_data> vocabulary) {
+        for (String line : lines) {
+            String[] parts = line.split(" ");
+            String term = parts[0];
+            int df = Integer.parseInt(parts[1]);
+            long pointer = Long.parseLong(parts[2]);
+            vocabulary.put(term, new term_data(df, pointer));
 
     /** Function that deletes the files with the given names
      * @param fileNames the names of the files to be deleted
@@ -531,19 +638,22 @@ public class pindexing {
 
         try {
             // Specify the directory path
-            String directoryPath = "resources/MiniCollection";
+
+            String directoryPath = "resources/MiniCollection/";
+
 
             // Compute occurrences for directory
             compute_occurrences_for_directory(directoryPath);
             createPartialIndex();
-            // Print out the size of the vocabulary
-            System.out.println("Vocabulary Size: " + voc.getVocabulary().size());
 
             // Print out the number of partial indexes created
             System.out.println("Number of Partial Indexes: " + partialIndexes.size());
 
             // Merge the partial indexes - every two indexes
-            mergeBOTHPartials(partialIndexes, partialPostings);
+
+            Object mutex = new Object();
+            synchronized (mutex) {
+                mergeBOTHPartialIndices(partialIndexes, partialPostings);
 
 
             if (partialIndexes.size() == 1 && partialPostings.size() == 1) {
@@ -554,6 +664,52 @@ public class pindexing {
             System.out.println("Partial Indexes: " + partialIndexes);
             System.out.println("Partial Postings: " + partialPostings);
 
+            }
+            long midtime = System.currentTimeMillis();
+            long MergeTime = midtime - startTime;
+            System.out.println("Partial and Merge execution time: " + MergeTime);
+
+            String vocabularyFilePath = "resources/if/mergedVocab0.txt";
+            String postingFilePath = "resources/if/mergedPost0.txt";
+            String docFilePath = "resources/if/DocumentsFile.txt";
+            System.out.println("docsNumber: " + docsNumber);
+            Map<String, term_data> vocab = loadVocabulary(vocabularyFilePath);
+            long loadtime = System.currentTimeMillis();
+            System.out.println("Vocabulary load time: " + (loadtime - midtime) + " milliseconds");
+
+
+            HashMap<Long, Double> hash_map = calculateNormForAllDocs(vocab, postingFilePath, docFilePath);
+
+            RandomAccessFile docFile = new RandomAccessFile(docFilePath, "rw");
+            //calculate root of the sum of the squares of the weights
+            for (Map.Entry<Long, Double> entry : hash_map.entrySet()) {
+                long docPointer = entry.getKey();
+                double docNorm = Math.sqrt(entry.getValue());
+                entry.setValue(docNorm);
+
+
+//                // Move to the position of docPointer in the file
+//                docFile.seek(docPointer);
+//
+//                // Read the existing line from the file
+//                String line = docFile.readLine();
+//
+//                // Append the docNorm value to the end of the line using String.format
+//                line = String.format("%s %s\n", line, docNorm);
+//
+//                // Clear the line by writing spaces
+//                docFile.seek(docPointer);
+//                for (int i = 0; i < line.length(); i++) {
+//                    docFile.writeByte(' ');
+//                }
+//
+//                // Move back to the position of docPointer and write the modified line
+//                docFile.seek(docPointer);
+//                docFile.writeBytes(line);
+            }
+            docFile.close();
+            long calcalation_time = System.currentTimeMillis();
+            System.out.println("Calculation time: " + (calcalation_time - loadtime) + " milliseconds");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -564,6 +720,6 @@ public class pindexing {
 
         long endTime = System.currentTimeMillis();
         long elapsedTime = endTime - startTime;
-        System.out.println("Execution time in milliseconds: " + elapsedTime);
+        System.out.println("Total execution Time: " + elapsedTime);
     }
 }
