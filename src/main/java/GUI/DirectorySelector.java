@@ -54,7 +54,7 @@ public class DirectorySelector extends JFrame {
                             compute_occurrences_for_directory(file.getAbsolutePath());
                             pindexing = new pindexing();
                             pindexing.createPartialIndex();
-                            mergeVocabs();
+                            merge_function();
 
                             if (pIndexing.pindexing.getPartialIndexes().size() == 1 && pIndexing.pindexing.getPartialPostings().size() == 1) {
                                 new File(pIndexing.pindexing.getPartialIndexes().poll()).renameTo(new File("resources/if/finalMergedVocab.txt"));

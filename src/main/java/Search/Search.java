@@ -1,10 +1,14 @@
 package Search;
 
+import Doc_voc_data.term_data;
+import QueryAnalysis.QueryEditor;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Necessary Class for Searching
@@ -43,11 +47,11 @@ public class Search {
     /* -------------------------- Constructors --------------------- */
     /**
      * Constructor
-     * @param vocabFilePath : the path of the vocabulary file
+     * @param vocabulary : the vocabulary of the collection
      * @param postingFilePath : the path of the posting file
      */
-    public Search(String vocabFilePath, String postingFilePath) {
-        this.VocabularyFileName = vocabFilePath;
+    public Search(Map<String, term_data> vocabulary, String postingFilePath, Boolean flag) {
+        this.vocabulary = vocabulary;
         this.PostingFileName = postingFilePath;
         this.numResults=0;
         this.FileNames = new ArrayList<>();
@@ -74,40 +78,59 @@ public class Search {
      * @throws IOException : if an I/O error occurs
      */
     public void search(String query) throws IOException {
-        RandomAccessFile vocabFile = new RandomAccessFile(getVocabularyFileName(), "r");
-        RandomAccessFile postingFile = new RandomAccessFile(getPostingFileName(), "r");
+        Boolean withVSM = getWithVSMflag();              // returns true if we need to do search with Vector Space Model or no
+        String[] queryWords = query.split(" ");     // Split the query into words
+        int NumDocs = 0;
 
-        String[] queryWords = query.split(" "); // Split the query into words
+        /*------ Vector Space Model -------*/
+        if( withVSM ){ // calc VSM weights on the query
+            QueryEditor queryEditor = new QueryEditor(query,queryWords.length,NumDocs); // create editor on query
+            // - [ PREPROCESSING ] --------------------------------------------------------
+            //  Filter out Stopwords - Stemm - Keep uniqueWords
+            //  sets list CleanedQuery_l with only the unique cleaned ^ words
+            //  initializes the QueryWeights with the words of the query and 0.0f
+            queryEditor.preprocessQuery();
 
-        for( String queryWord : queryWords) {        // for each word of the QUERY
-            String line;
-            while ((line = vocabFile.readLine()) != null) {
-                String[] splitLine = line.split(" ");
-                String word = splitLine[0];         // get the word from the VOCAB file line
-                if (word.equals(queryWord)) {       // FOUND the query word
-                    long postingListPointer = Long.parseLong(splitLine[2]);
-                    int df = Integer.parseInt(splitLine[1]);
-                    System.out.println("following pointer.. "+postingListPointer);
-                    postingFile.seek(postingListPointer);
-                    for (int i = 0; i < df; i++) { // read the posting list (df lines
+            // ----------------------------------------------------------------------------
+            queryEditor.VSM();      // QueryWeights = { weights of each word of the Query }
 
-                        String postingList = postingFile.readLine();
-                        String FileName = postingList.split(" ")[0];
-                        System.out.println(FileName);
-                        /* ----- store findings ----- */
-                        FileNames.add(FileName);
-                        Snippets.add("Snippet: .... ");
-                        Scores.add("Score: ");
-                        /* -------------------------- */
-                        System.out.println("The word '" + queryWord + "' appears in documents: " + postingList);
-                    }
 
-                    //break;
+
+        /*----------- No sorting ----------*/
+        }else{
+            RandomAccessFile postingFile = new RandomAccessFile(getPostingFileName(), "r");
+
+            /* load vocabulary */
+
+            for( String queryWord : queryWords) {        // for each word of the QUERY
+
+                long postingListPointer = vocabulary.get(queryWord).getPointer();
+                // a word may not exits
+                // ...
+                // System.out.println();
+                // break ;
+
+                int df = vocabulary.get(queryWord).getDf();
+                System.out.println("following pointer.. "+postingListPointer);
+                postingFile.seek(postingListPointer);
+                for (int i = 0; i < df; i++) { // read the posting list (df lines
+                    String postingList = postingFile.readLine();
+                    String FileName = postingList.split(" ")[0];
+                    System.out.println(FileName);
+                    /* ----- store findings ----- */
+                    FileNames.add(FileName);
+                    Snippets.add("Snippet: .... ");
+                    Scores.add("Score: ");
+                    /* -------------------------- */
+                    System.out.println("The word '" + queryWord + "' appears in documents: " + postingList);
                 }
+                //break;
+
             }
+
+            postingFile.close();
         }
-        vocabFile.close();
-        postingFile.close();
+
     }
 
     /* -------------------------- helper functions -------------------------- */
@@ -119,29 +142,14 @@ public class Search {
      * @throws IOException : if an I/O error occurs
      */
     public int[] getTotalDf(String query) throws IOException {
-        RandomAccessFile vocabFile = new RandomAccessFile(getVocabularyFileName(), "r");
 
         String[] queryWords = query.split(" "); // Split the query into words
         int[] totalDfs = new int[queryWords.length]; // Initialize the array
-        int dfs = 0;
-
-        for(int i=0; i<queryWords.length; i++){     // words in the Query
-            String line;
-            String queryWord = queryWords[i];
-            dfs=0;
-            while ((line = vocabFile.readLine()) != null) {
-                String[] splitLine = line.split(" ");
-                String word = splitLine[0];
-                if (word.equals(queryWord)) {
-                    int df = Integer.parseInt(splitLine[1]);
-                    dfs = dfs + df;
-                    totalDfs[i] = dfs;
-                }
-            }
-            vocabFile.seek(0); // Reset the file pointer to the beginning of the file for the next word
+        
+        for(int i=0; i<queryWords.length; i++){                 // For every word in the Query
+            int df = vocabulary.get(queryWords[i]).getDf();
+            totalDfs [i] = df;
         }
-
-        vocabFile.close();
         return totalDfs;
     }
 }

@@ -109,7 +109,7 @@ public class QueryGUI {
                 String result = "Results for query: \t" + query;
                 resultArea.setText(result);
                 // Display the results in the result area
-                search = new Search("resources/if/VocabularyFile.txt", "resources/if/PostingFile.txt");
+                search = new Search(LoadedVocab, "resources/if/PostingFile.txt", search.getWithVSMflag());
                 try {
                     search.setNumResults(search.getTotalDf(query)[0]);
                     numResultButtons = search.getNumResults();
