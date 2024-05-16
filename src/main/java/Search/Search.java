@@ -63,6 +63,10 @@ public class Search {
         return List.of("Result 1", "Result 2", "Result 3");
 
     }
+    public static String performS(String query) {
+        // Perform the search with the given query
+        return "Results for query: \t" + query;
+    }
 
     /**
      * Function that searches for a specific word in the vocabulary file

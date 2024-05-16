@@ -3,6 +3,7 @@ import mitos.stemmer.Stemmer;
 
 import java.io.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -15,6 +16,21 @@ import java.util.Set;
  *
  */
 public class Stemming {
+
+    /**
+     * Function that stems the words in the given List<String
+     *
+     * @param words the array of words to be stemmed
+     * @return the stemmed words
+     */
+    public static List<String> stemWords(List<String> words) {
+        for (int i = 0; i < words.size(); i++) {
+            words.set(i, Stemmer.Stem(words.get(i)));
+        }
+        return words;
+    }
+
+
     /**
      * Reads the first word of each line from our file and returns a set of
      * these words Stemmed and Filtered to exclude Duplicates
