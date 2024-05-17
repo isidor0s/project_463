@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import Stemming.Stemming;
 import java.util.stream.Collectors;
 
 public class utilities {
@@ -20,6 +21,8 @@ public class utilities {
      */
     public static List<String> findUniqueTermsOfArray(String[] words) {
         Set<String> uniqueWords = new HashSet<>(Arrays.asList(words));
+        // case sensitive
+
         List<String> termsWithoutDuplicates = uniqueWords.stream().distinct().collect(Collectors.toList());
 
         return termsWithoutDuplicates;
@@ -89,6 +92,9 @@ public class utilities {
         List<String> termsList_filtered = FilterOutStopwords("stopwordsEn.txt",termsList);
         termsList_filtered = FilterOutStopwords("stopwordsGr.txt",termsList_filtered);
         List<String> termsWithoutDuplicates = termsList_filtered.stream().distinct().collect(Collectors.toList());
+        // stem the words
+        termsWithoutDuplicates = Stemming.stemWords(termsWithoutDuplicates);
+
         return termsWithoutDuplicates;
 
     }
@@ -115,6 +121,7 @@ public class utilities {
         List<String> termsList = new ArrayList<>();
         Collections.addAll(termsList, terms);
         List<String> termsList_filtered = FilterOutStopwords("stopwordsEn.txt",termsList);
+        termsList_filtered = Stemming.stemWords(termsList_filtered);
 
 
         // garbage collection

@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import static Doc_voc_data.utilities.*;
+import static Stemming.Stemming.stemWords;
 
 /**
  * [B6]
@@ -82,6 +83,8 @@ public class pindexing {
                     NXMLFileReader xmlFile = new NXMLFileReader(file);
                     // finds the unique terms in our xmlFile
                     List<String> uniqueTermsList = findUniqueTerms(xmlFile);
+
+                    //stem unique terms list
                     List<String> allTerms = findTerms(xmlFile);
 
                     document doc = new document(); //Make a new document class

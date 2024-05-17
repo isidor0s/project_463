@@ -4,10 +4,7 @@ import Doc_voc_data.term_data;
 import QueryAnalysis.QueryEditor;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Necessary Class for Searching
@@ -28,8 +25,10 @@ public class Search {
     List<String> Scores;                // correspond to the scores of the results
     int NumDocs;                        // number of documents in the collection
     List<String> Paths;
+    String Type;                        // correspond to the type of the search
     private Map<String, term_data> vocabulary;
     Boolean withVSMflag = false;        // flag to determine if we need to do search with Vector Space Model or no
+    long searchTime ;
 
     /* ---------------------------- Getters ------------------------ */
     public String getVocabularyFileName() { return VocabularyFileName; }
@@ -41,8 +40,10 @@ public class Search {
     public List<String> getScores() { return Scores; }
     public Boolean getWithVSMflag() { return withVSMflag; }
     public List<String> getPaths() { return Paths; }
+    public String getType() { return Type; }
     public Map<String, term_data> getVocabulary() { return vocabulary; }
     public int getNumDocs() { return NumDocs; }
+    public long getSearchTime() { return searchTime; }
     /* ---------------------------- Setters ------------------------ */
     public void setPaths(List<String> paths) { Paths = paths;}
     public void setVocabularyFileName(String vocabularyFileName) { VocabularyFileName = vocabularyFileName; }
@@ -52,9 +53,11 @@ public class Search {
     public void setFileNames(List<String> fileNames) { FileNames = fileNames; }
     public void setSnippets(List<String> snippets) { Snippets = snippets; }
     public void setScores(List<String> scores) { Scores = scores; }
+    public void setType(String type){ Type = type;}
     public void setWithVSMflag(Boolean flag){ withVSMflag = flag;}
     public void setVocabulary(Map<String, term_data> vocabulary) { this.vocabulary = vocabulary; }
     public void setNumDocs(int numDocs) { NumDocs = numDocs; }
+    public void setSearchTime(long searchTime) { this.searchTime = searchTime; }
     /* -------------------------- Constructors --------------------- */
     /**
      * Constructor
@@ -71,6 +74,7 @@ public class Search {
         this.Paths = new ArrayList<>();
         this.withVSMflag = flag;
         this.NumDocs = numDocs;
+        this.Type ="";
     }
     /*--------------------------------------------------------------------*/
     public static int countLines(String filename) throws IOException {
@@ -93,7 +97,7 @@ public class Search {
      * given the data collected in the QueryEditor class
      */
     public void updateResults(HashMap<Long,Double> doc_CosSim) throws IOException {
-        RandomAccessFile docsFile = new RandomAccessFile("resources/CollectionIndex/DocumentsFile.txt", "r");
+        RandomAccessFile docsFile = new RandomAccessFile("resources/if/DocumentsFile.txt", "r");
         for (Map.Entry<Long, Double> entry : doc_CosSim.entrySet()) {
 
             long dpointer = entry.getKey();     // pointer to doc
@@ -106,7 +110,7 @@ public class Search {
             String FilePath = (docParts[1]);
             String Score = String.valueOf(entry.getValue());
 
-            System.out.println("-----Update Results-----");
+            //System.out.println("-----Update Results-----");
             // update results
             FileNames.add(FileId);
             Snippets.add("Snippet: .... ");
@@ -121,11 +125,28 @@ public class Search {
     /**
      * Function that searches for a specific word in the vocabulary file
      * @param query : the words to search for
+     * @param type : the type of the search
      * @throws IOException : if an I/O error occurs
      */
-    public void search(String query) throws IOException {
+    public void search(String query, String type) throws IOException {
+        long StartTime = System.currentTimeMillis();
+        setType(type);
+
         Boolean withVSM = getWithVSMflag();              // returns true if we need to do search with Vector Space Model or no
         String[] queryWords = query.split(" ");     // Split the query into words
+        // filter query words to remove punctuation inside
+        for(int i=0; i<queryWords.length; i++){
+            queryWords[i] = queryWords[i].replaceAll("[^a-zA-Z0-9]", " ");
+        }
+        // clean all words off of white space
+        for(int i=0; i<queryWords.length; i++){
+            queryWords[i] = queryWords[i].trim();
+        }
+        // print all querywords
+        for(String word : queryWords){
+            System.out.print(" "+word+" " );
+        }
+        System.out.println();
         int NumDocs = getNumDocs();
 
         /*------ Vector Space Model -------*/
@@ -147,8 +168,36 @@ public class Search {
             // - [ UPDATE results ] --------------------------------------------------------
             // sort the results by the score
             // ----------------------------------------------------------------------------
-            queryEditor.sort( queryEditor.getDoc_CosSim() );
+            queryEditor.sort_results( queryEditor.getDoc_CosSim() );
             // ----------------------------------------------------------------------------
+            if(type!=null){
+                int relevant_docs=0;
+                RandomAccessFile docsFile = new RandomAccessFile("resources/if/DocumentsFile.txt", "r");
+
+                HashMap<Long,Double> DocCosSim_wtype = queryEditor.getDoc_CosSim();
+                // search for the files paths of the results and keep only the relevant ones
+                // ----------------------------------------------------------------------------
+                Iterator<Map.Entry<Long, Double>> iterator = DocCosSim_wtype.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<Long, Double> entry = iterator.next();
+                    long dpointer = entry.getKey();
+                    docsFile.seek(dpointer);
+                    String doc = docsFile.readLine();
+                    String[] docParts = doc.split(" ");
+                    String FilePath = (docParts[1]);
+                    // [REMOVES] results without the -Type- word in their FilePath
+                    if (!FilePath.contains(type)) {
+                        // remove the result
+                        iterator.remove();
+                    }else{
+                        relevant_docs=relevant_docs+1;
+                    }
+                }
+                // update the results
+                queryEditor.setDoc_CosSim(DocCosSim_wtype);
+                System.out.println("Relevant Docs: "+relevant_docs);
+                setNumResults(relevant_docs);
+            }
             // store the results in the lists FileNames, Snippets, Scores, Paths
             updateResults( queryEditor.getDoc_CosSim() );
 
@@ -158,7 +207,7 @@ public class Search {
         /*----------- No sorting ----------*/
         }else{
             RandomAccessFile postingFile = new RandomAccessFile(getPostingFileName(), "r");
-            RandomAccessFile docsFile = new RandomAccessFile(new File("resources/CollectionIndex/DocumentsFile.txt"), "r");
+            RandomAccessFile docsFile = new RandomAccessFile(new File("resources/if/DocumentsFile.txt"), "r");
             /* load vocabulary */
 
             for( String queryWord : queryWords) {        // for each word of the QUERY
@@ -191,10 +240,8 @@ public class Search {
 
                     String[] docParts = doc.split(" ");
                     String numberConvertion= docParts[2].replace(",", ".");
-                    float dnorm = Float.parseFloat(numberConvertion);
 
-                    System.out.println("dnorm: "+dnorm);
-                    System.out.println("================Doc: "+doc+" "+dnorm);
+                    System.out.println("Doc: "+doc);
                     Paths.add(docParts[1]);
                     /* -------------------------- */
                     System.out.println("The word '" + queryWord + "' appears in documents: " + postingList);
@@ -204,7 +251,10 @@ public class Search {
 
             postingFile.close();
         }
-
+        long finish = System.currentTimeMillis();
+        long TotalTime = finish - StartTime;
+        setSearchTime(TotalTime);
+        System.out.println("Total Time: "+TotalTime + "ms");
     }
 
     /* -------------------------- helper functions -------------------------- */

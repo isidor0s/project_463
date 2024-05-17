@@ -66,25 +66,49 @@ public class QueryGUI {
         buttonPanel.setLayout(new GridLayout(numResultButtons, 1)); // Set layout as grid with n rows and 1 column
         buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
 
-// Create n buttons and add them to the panel
-        for (int i = 0; i < numResultButtons; i++) {   // 7 -- will be replaced with numButtons
-            // - buttonText -
-            /* * FILE PATH ,
-             * * SNIPPET ,
-             * * SCORE */
-            System.out.println("Creating button " + i);
+        // TOO MANY BUTTONS TO CREATE
+        if(numResultButtons>20){
+            // Create n buttons and add them to the panel
+            for (int i = 0; i < 20; i++) {   // 7 -- will be replaced with numButtons
+                // - buttonText -
+                /* * FILE PATH ,
+                 * * SNIPPET ,
+                 * * SCORE */
+                //System.out.println("Creating button " + i);
 
-            String DOCID = search.getFileNames().get(i); // updating filenames..
-            String SNIPPET = search.getSnippets().get(i);
-            String SCORE = search.getScores().get(i);
-            String Path = search.getPaths().get(i);
-            String buttonText = "<html><b>" + i + "</b> : <pre>" +
-                    "Doc id: "+ DOCID +"<br>"+"File path:"+Path+"<br>" + SNIPPET + "<br>" + SCORE + "</pre></html>";
+                String DOCID = search.getFileNames().get(i); // updating filenames..
+                String SNIPPET = search.getSnippets().get(i);
+                String SCORE = search.getScores().get(i);
+                String Path = search.getPaths().get(i);
+                String buttonText = "<html><b>" + i + "</b> : <pre>" +
+                        "Doc id: "+ DOCID +"<br>"+"File path:"+Path+"<br>" + SNIPPET + "<br>" + SCORE + "</pre></html>";
 
-            JButton button = new JButton(buttonText);
-            button.setHorizontalAlignment(SwingConstants.LEFT);
-            buttonPanel.add(button);
+                JButton button = new JButton(buttonText);
+                button.setHorizontalAlignment(SwingConstants.LEFT);
+                buttonPanel.add(button);
+            }
+        }else{
+            // Create n buttons and add them to the panel
+            for (int i = 0; i < numResultButtons; i++) {   // 7 -- will be replaced with numButtons
+                // - buttonText -
+                /* * FILE PATH ,
+                 * * SNIPPET ,
+                 * * SCORE */
+                //System.out.println("Creating button " + i);
+
+                String DOCID = search.getFileNames().get(i); // updating filenames..
+                String SNIPPET = search.getSnippets().get(i);
+                String SCORE = search.getScores().get(i);
+                String Path = search.getPaths().get(i);
+                String buttonText = "<html><b>" + i + "</b> : <pre>" +
+                        "Doc id: "+ DOCID +"<br>"+"File path:"+Path+"<br>" + SNIPPET + "<br>" + SCORE + "</pre></html>";
+
+                JButton button = new JButton(buttonText);
+                button.setHorizontalAlignment(SwingConstants.LEFT);
+                buttonPanel.add(button);
+            }
         }
+
 
         //JScrollBar vertical = new JScrollBar(JScrollBar.VERTICAL);
         scrollPane = new JScrollPane(buttonPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -126,6 +150,8 @@ public class QueryGUI {
         // Create the type label
         typeLabel = new JLabel("Type:");
         typeLabel.setBounds(10, 50, 50, 30);
+        // action listener for type field
+
 
         // Create the type field
         typeField = new JTextField(20);
@@ -149,7 +175,7 @@ public class QueryGUI {
         buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
         /*----------------------------  SEARCH OBJECT -----------------------------*/
         int docsNum = countLines("resources/if/DocumentsFile.txt");
-        System.out.println("---------------------------------------"+ docsNum);
+        System.out.println("Total Docs"+ docsNum);
         search = new Search(LoadedVocab, "resources/if/PostingFile.txt", VSMflag,docsNum);// Initialize the search object
         /*-------------------------------------------------------------------------*/
         // Create the search button
@@ -161,47 +187,55 @@ public class QueryGUI {
                 String query = queryField.getText();
                 String type = typeField.getText();
                 // Perform search with the query and type
-                String result = "Results for query: \t" + query;
-                resultArea.setText(result);
-                // Display the results in the result area
-                try {
-                    int[] results_ofQuery = search.getTotalDf(query);
+                if(type!=null) {
 
-                    /* e.g        Query = { cancer , book }        */
-                    /*-------------------------------------------- */
-                    /*  results_ofQuery = [ 18, 2 ]                */
-                    /*                                             */
-                    /*  allResults  =  18 + 2 =  20                */
 
-                    int allResults= 0;
-                    for(int j=0; j<results_ofQuery.length;j++){
-                        allResults = allResults + results_ofQuery[j];
+                    // Display the results in the result area
+                    try {
+                        int[] results_ofQuery = search.getTotalDf(query);
+
+                        /* e.g        Query = { cancer , book }        */
+                        /*-------------------------------------------- */
+                        /*  results_ofQuery = [ 18, 2 ]                */
+                        /*                                             */
+                        /*  allResults  =  18 + 2 =  20                */
+
+                        int allResults = 0;
+                        for (int j = 0; j < results_ofQuery.length; j++) {
+                            allResults = allResults + results_ofQuery[j];
+                        }
+
+                        search.setNumResults(allResults);
+                        numResultButtons = search.getNumResults();
+                        String result = "Results for query: \t" + query + "\n" + "Type: \t\t" + type + "\n" + "Results: \t\t" + numResultButtons + "\t\t" + search.getSearchTime() + "mils\n";
+                        resultArea.setText(result);
+                        System.out.println("Number of results: " + numResultButtons);
+
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
                     }
+                    try {
 
-                    search.setNumResults(allResults);
-                    numResultButtons = search.getNumResults();
-                    System.out.println("Number of results: " + numResultButtons);
-
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                        // Call the search method with the query
+                        search.search(query,type);
+                        numResultButtons = search.getNumResults();
+                        // repaint resultarea
+                        String result = "Results for query: \t" + query + "\n" + "Type: \t\t" + type + "\n" + "Results: \t\t" + numResultButtons + "\t\t\t\t TIME: " + search.getSearchTime() + " ms\n";
+                        resultArea.setText(result);
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
+                    }
+                    if (buttonPanel != null) {
+                        frame.remove(buttonPanel);
+                    }
+                    generateButtons();
                 }
-                try {
-
-                    // Call the search method with the query
-                    search.search(query);
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                }
-                if (buttonPanel != null) {
-                    frame.remove(buttonPanel);
-                }
-                generateButtons();
             }
         });
 
         // Create the result area
         resultArea = new JTextArea();
-        resultArea.setBounds(10, 90, 760, 45);
+        resultArea.setBounds(10, 85, 760, 55);
 
         // Add the button panel to the frame
         //frame.add(buttonPanel);

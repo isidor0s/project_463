@@ -1,11 +1,10 @@
 package Stemming;
+import Doc_voc_data.term_data;
 import mitos.stemmer.Stemmer;
 
+import javax.swing.plaf.synth.SynthOptionPaneUI;
 import java.io.*;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This class STEMS the terms found in B1, B2 and stores them in a txt file
@@ -30,7 +29,20 @@ public class Stemming {
         return words;
     }
 
-
+    /**
+     * Function that given a map of terms and their data, stems the terms and returns the stemmed map
+     * @param voc
+     * @return
+     */
+    public static Map<String, term_data> stemWords_m(Map<String, term_data> voc) {
+        Map<String, term_data> stemmedVoc = new HashMap<>();
+        for (Map.Entry<String, term_data> entry : voc.entrySet()) {
+            String stemmedWord = Stemmer.Stem(entry.getKey());
+            term_data data = entry.getValue();
+            stemmedVoc.put(stemmedWord, data);
+        }
+        return stemmedVoc;
+    }
     /**
      * Reads the first word of each line from our file and returns a set of
      * these words Stemmed and Filtered to exclude Duplicates

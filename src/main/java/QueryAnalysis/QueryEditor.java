@@ -9,6 +9,7 @@ import java.util.*;
 import static Doc_voc_data.utilities.*;
 import static Stemming.Stemming.stemWords;
 
+
 /**
  * Class that is responsible for the Analysis of the Query based on the :
  * ###################################
@@ -65,6 +66,19 @@ public class QueryEditor {
         setNumDocs(numdocs);
         setVocabulary(vocabulary);
     }
+    /**
+     *
+     */
+    public List<String> removePunctuation ( List<String> words){
+        List<String> filteredWords = new ArrayList<>();
+        for(String word : words){
+            String filteredWord = word.replaceAll("[^a-zA-Z0-9]", "");
+            filteredWords.add(filteredWord);
+        }
+        System.out.println("Punctuation Removed: "+filteredWords);
+        return filteredWords;
+
+    }
 
     /**
      * Function that initializes the QueryWeights
@@ -117,6 +131,9 @@ public class QueryEditor {
 
         /* ----------- Remove duplicate words - Keep Unique ------------------ */
         List<String> QueryList = findUniqueTermsOfArray(words);     // Query List --- ( used for filtering )
+        // remove ,./;'] etc
+        System.out.println("------------------------------------------------------");
+        //QueryList = removePunctuation(QueryList);
 
         /* -------------------- Stemming the Query words --------------------- */
         QueryList = stemWords(QueryList);
@@ -186,12 +203,16 @@ public class QueryEditor {
         HashMap <String,Float> normalizedTFs = calculateQuery_TFs(getQuery());  // get the TFs of the query
         HashMap <String,Float> allIDFS = calculateIDF_query();  // get the TFs of the query
         query_DistanceVector = 0;
+        float weight = 0;
         for(String word : CleanedQuery_l){  // for each word of the query
+            Float tf_i = normalizedTFs.get(word);
+            Float idf_i = allIDFS.get(word);
+            if (tf_i==null || idf_i==null){
+                weight = 0;
+            }else{
+                weight = (float) tf_i * idf_i;
+            }
 
-            float tf_i = normalizedTFs.get(word);
-            float idf_i = allIDFS.get(word);
-
-            float weight = tf_i * idf_i;
             query_DistanceVector = query_DistanceVector+Math.pow(weight, 2);
             //System.out.println("Word: "+word+"  Weight: "+weight);
             QueryWeights.put(word,weight);
@@ -262,7 +283,7 @@ public class QueryEditor {
      * Function that sorts the similarity hashmap
      * @param similarity a hashmap storing all the cos_sim between a doc and the query
      */
-    public void sort (HashMap<Long, Double> similarity){
+    public void sort_results (HashMap<Long, Double> similarity){
         // Convert the similarity hashmap into a list of entries
         List<HashMap.Entry<Long, Double>> list = new ArrayList<>(similarity.entrySet());
 
