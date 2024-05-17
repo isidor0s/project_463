@@ -29,9 +29,23 @@ public class document {
     HashMap<String, Map<Integer,Integer>> termFrequencies; // mapping: < word , tag_id, tf>
     HashMap<String, Integer> Doc_TF; // mapping: < word , tf> where tf is total , meaning it includes all tags
     HashMap<String, Integer> Term_Position; // first occurrence of term in doc
-
+    int id; // id of the document
     long docPointer; // pointer to the location in the PostingFile where the entry should be written.
+    int max_tf; // max term frequency of the document
 
+    // Getters and Setters
+    public int getId() {
+        return id;
+    }
+    public void setId(int id) {
+        this.id = id;
+    }
+    public int getMax_tf() {
+        return max_tf;
+    }
+    public void setMax_tf(int max_tf) {
+        this.max_tf = max_tf;
+    }
     public long getDocPointer() {
         return docPointer;
     }

@@ -37,6 +37,8 @@ public class Search {
     public List<String> getSnippets() { return Snippets; }
     public List<String> getScores() { return Scores; }
     /* ---------------------------- Setters ------------------------ */
+
+    public void setPaths(List<String> paths) { Paths = paths;}
     public void setVocabularyFileName(String vocabularyFileName) { VocabularyFileName = vocabularyFileName; }
     public void setPostingFileName(String postingFileName) { PostingFileName = postingFileName; }
     public void setQuery(String[] query) { Query = query; }
@@ -99,7 +101,7 @@ public class Search {
         /*----------- No sorting ----------*/
         }else{
             RandomAccessFile postingFile = new RandomAccessFile(getPostingFileName(), "r");
-
+            RandomAccessFile docsFile = new RandomAccessFile(new File("resources/if/temp.txt"), "r");
             /* load vocabulary */
 
             for( String queryWord : queryWords) {        // for each word of the QUERY
@@ -115,12 +117,19 @@ public class Search {
                 postingFile.seek(postingListPointer);
                 for (int i = 0; i < df; i++) { // read the posting list (df lines
                     String postingList = postingFile.readLine();
-                    String FileName = postingList.split(" ")[0];
-                    System.out.println(FileName);
+                    String parts[] = postingList.split(" ");
+
+                    System.out.println("DocId "+parts[0]);
                     /* ----- store findings ----- */
-                    FileNames.add(FileName);
+                    FileNames.add(parts[0]);
                     Snippets.add("Snippet: .... ");
                     Scores.add("Score: ");
+                    docsFile.seek(Long.parseLong(parts[2]));
+                    String doc = docsFile.readLine();
+                    System.out.println("================Doc: "+doc);
+                    String[] docParts = doc.split(" ");
+
+                    Paths.add(docParts[1]);
                     /* -------------------------- */
                     System.out.println("The word '" + queryWord + "' appears in documents: " + postingList);
                 }

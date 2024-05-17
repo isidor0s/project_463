@@ -36,7 +36,7 @@ public class QueryGUI {
         buttonPanel.setLayout(new GridLayout(numResultButtons, 1)); // Set layout as grid with n rows and 1 column
         buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
 
-        // Create n buttons and add them to the panel
+// Create n buttons and add them to the panel
         for (int i = 0; i < numResultButtons; i++) {   // 7 -- will be replaced with numButtons
             // - buttonText -
             /* * FILE PATH ,
@@ -44,29 +44,28 @@ public class QueryGUI {
              * * SCORE */
             System.out.println("Creating button " + i);
 
-            String FILE_PATH = search.getFileNames().get(i); // updating filenames..
+            String DOCID = search.getFileNames().get(i); // updating filenames..
             String SNIPPET = search.getSnippets().get(i);
             String SCORE = search.getScores().get(i);
+            String Path = search.getPaths().get(i);
             String buttonText = "<html><b>" + i + "</b> : <pre>" +
-                    FILE_PATH + "<br>" + SNIPPET + "<br>" + SCORE + "</pre></html>";
+                    "Doc id: "+ DOCID +"<br>"+"File path:"+Path+"<br>" + SNIPPET + "<br>" + SCORE + "</pre></html>";
 
             JButton button = new JButton(buttonText);
             button.setHorizontalAlignment(SwingConstants.LEFT);
             buttonPanel.add(button);
         }
 
-        //JScrollBar vertical = new JScrollBar(JScrollBar.VERTICAL);
+//JScrollBar vertical = new JScrollBar(JScrollBar.VERTICAL);
         scrollPane = new JScrollPane(buttonPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBounds(780,140, 20, numResultButtons * 80);
+        scrollPane.setBounds(10,140, 760, numResultButtons * 80);
         scrollPane.setVisible(true);
-        // Add the scrollPane to the layout
-        frame.add(scrollPane, BorderLayout.EAST);
-        //frame.add(buttonPanel);
+// Add the scrollPane to the layout
+        frame.add(scrollPane, BorderLayout.CENTER);
 
-        // Refresh the button panel
+// Refresh the button panel
         buttonPanel.revalidate();
         buttonPanel.repaint();
-        frame.add(buttonPanel, BorderLayout.WEST);
         frame.setVisible(true);
     }
 
@@ -97,6 +96,7 @@ public class QueryGUI {
         buttonPanel.setLayout(new GridLayout(numResultButtons, 1)); // Set layout as grid with n rows and 1 column
         buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
 
+        search = new Search(LoadedVocab, "resources/if/PostingFile.txt", VSMflag);// Initialize the search object
         // Create the search button
         searchButton = new JButton("Search");
         searchButton.setBounds(380, 10, 100, 30);

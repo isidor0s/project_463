@@ -42,10 +42,11 @@ public class pindexing {
     static RandomAccessFile docFile;                            // creates DocumentsFile.txt with the 3 important info - filename, filepath, tf*idf
     static int docsNumber = 0; // number of documents in the collection
     static int start =0;
+    static int mergeCounter = 0;
     /* ------------------------------------------------------------------------------------------ */
     static {
         try {
-            docFile = new RandomAccessFile("resources/if/DocumentsFile.txt","rw");
+            docFile = new RandomAccessFile("resources/if/temp.txt","rw");
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -67,18 +68,14 @@ public class pindexing {
      * @param directoryPath path of the directory(files) we want to compute the metrics upon
      * @throws IOException ioexception
      */
+    static int id = 0;
     public static void compute_occurrences_for_directory(String directoryPath) throws IOException {
         File folder = new File(directoryPath);
         File[] list_of_files = folder.listFiles();
-        int threshold_flag = 0;
 
         if ( list_of_files != null) {
             for (File file :  list_of_files) {
                 if (file.isFile() && file.getName().endsWith(".nxml")) {
-
-                    Path path = Paths.get(file.getAbsolutePath()); // k - absolute path of the document
-                    String fileName = path.getFileName().toString();
-                    String id = fileName.substring(0, fileName.lastIndexOf('.'));
 
                     //read the file
                     NXMLFileReader xmlFile = new NXMLFileReader(file);
@@ -88,10 +85,17 @@ public class pindexing {
 
                     document doc = new document(); //Make a new document class
                     doc.setDocPointer(docFile.getFilePointer()); //pass file pointer of document txt
-                    voc.getDocList().put(file.getAbsolutePath(), doc);
+                    doc.setId(id);
+                    id++;
+                    String Path = file.getAbsolutePath();
+                    voc.getDocList().put(Path, doc);
+
                     docFile.writeBytes(String.format("%s %s\n",id,file.getAbsolutePath())); //write the info to documents.txt
+
                     docsNumber++;
+
                     /* ------------------------ Partial Index Making ... -------------------------------- */
+                    int maxTf = 0;
                     for (int i = 0; i < uniqueTermsList.size(); i++) {
                         String word = uniqueTermsList.get(i);
 
@@ -99,8 +103,15 @@ public class pindexing {
                         for ( String term : allTerms ){//this loop calculates the df
                             if(Objects.equals(term, word)) {
                                 //get the saved document from the doclist of the vocabulary
-                                voc.getDocList().get(file.getAbsolutePath()).getDoc_TF().compute(term, (k, v) -> v == null ? 1 : v + 1); // reference https://www.baeldung.com/java-word-frequency
+                                document docTemp = voc.getDocList().get(Path);
+                                int currentTf = docTemp.getDoc_TF().compute(term, (k, v) -> v == null ? 1 : v + 1); // reference https://www.baeldung.com/java-word-frequency
+                                if (currentTf > maxTf) {
+                                    maxTf = currentTf;
+                                }
                             }
+                        }
+                        if (maxTf > doc.getMax_tf()) {
+                            doc.setMax_tf(maxTf);
                         }
 //                        System.out.println(word+" " +doc.getDoc_TF().get(word));
 
@@ -109,10 +120,6 @@ public class pindexing {
                         voc.getVocabulary().put(word, documents);
 
                         if (voc.getVocabulary().size() >= THRESHOLD && i == uniqueTermsList.size() - 1) {
-
-//                            System.out.println(voc.getVocabulary().size());
-
-                            threshold_flag = 1;
                             createPartialIndex();
                         }
                         // fills the Vocabulary.vocabulary with a list of docs
@@ -120,7 +127,6 @@ public class pindexing {
                     /* ----------------------------------------------------------------------------------- */
                 } else if (file.isDirectory()) {
                     compute_occurrences_for_directory(file.getAbsolutePath()); // recursively search subdirectories
-
                 }
             }
 
@@ -147,27 +153,18 @@ public class pindexing {
         String pathPrefix = "resources/if/";
         String partialPosting = pathPrefix + "partialPosting" + partialIndexes.size() + ".txt";
         String partialVocab = pathPrefix + "partialVocab" + partialIndexes.size() + ".txt";
-        // VocabularyFile.txt ---> < word df >
-        // HashMap<String,Long> term_posting_pointer = new HashMap<>(); // points to ... , is located in ...
+
         RandomAccessFile posting = new RandomAccessFile(partialPosting, "rw"); // partial Postin
         RandomAccessFile vocab = new RandomAccessFile(partialVocab, "rw"); // partial vocabulary
-//        System.out.println("docList" +voc.getDocList().size() + "\n");
         for (String word : sortedWords) {
             long pointer = posting.getFilePointer();
-            voc.getVocabulary().get(word).size();
-            for(String docid : voc.getVocabulary().get(word)) {
-                Path path = Paths.get(docid); // k - absolute path of the document
-                String fileName = path.getFileName().toString();
-                String id = fileName.substring(0, fileName.lastIndexOf('.'));
-                document temp  = voc.getDocList().get(docid);
-                posting.writeBytes(String.format("%s %s %d\n",id,temp.getDoc_TF().get(word),temp.getDocPointer())); /// add doc pointer
-            }
-//            System.out.println(voc.getVocabulary().get(word).size());
-            vocab.writeBytes(String.format("%s %s %d\n",word,voc.getVocabulary().get(word).size(),pointer)); // medicine 324851.nxml
-//            term_posting_pointer.put(word, pointer);
-        }
-//        System.out.println("--------------\n"+voc.getVocabulary()+"\n--------------");
 
+            for(String docid : voc.getVocabulary().get(word)) {
+                document temp  = voc.getDocList().get(docid);
+                posting.writeBytes(String.format("%s %s %d\n",temp.getId(),(float) temp.getDoc_TF().get(word)/temp.getMax_tf(),temp.getDocPointer())); /// add doc pointer
+            }
+            vocab.writeBytes(String.format("%s %s %d\n",word,voc.getVocabulary().get(word).size(),pointer)); // medicine 324851.nxml
+        }
         partialIndexes.add(partialVocab); // saves the name partialIndexFile to the Queue
         partialPostings.add(partialPosting);
 
@@ -412,7 +409,9 @@ public class pindexing {
             new File(partialPosting2).delete();
             /*-----------------------------------------------------------------------*/
         }
-        System.out.println("total merges " + start);
+
+        mergeCounter = mergeCounter + start; // total merges
+
         start--;
 
         //Rename
@@ -456,8 +455,8 @@ public class pindexing {
 
         return vocabulary;
     }
-    public static HashMap<Long,Double> calculateNormForAllDocs(Map<String,term_data> vocabulary, String postingFilePath, String docFilePath) {
-        HashMap<Long, Double> docNorms = new HashMap<>();
+    public static HashMap<Long,Float> calculateNormForAllDocs(Map<String,term_data> vocabulary, String postingFilePath, String docFilePath) {
+        HashMap<Long, Float> docNorms = new HashMap<>();
         try {
             RandomAccessFile postingFile = new RandomAccessFile(postingFilePath, "r");
             RandomAccessFile docFile = new RandomAccessFile(docFilePath, "rw");
@@ -469,33 +468,25 @@ public class pindexing {
                 String term = vocabularyParts[0];
                 int df = entry.getValue().getDf();
                 long pointer = entry.getValue().getPointer();
-//                System.out.println("term "+term);
-//                // Move to the appropriate position in the posting file
-//                System.out.println("pointer "+pointer);
-                postingFile.seek(pointer);
 
+                postingFile.seek(pointer);
 
                 // Iterate through postings for the term
                 for (int i = 0; i < df; i++) {
                     String postingLine = postingFile.readLine();
                     String[] parts = postingLine.split(" ");
-//                    System.out.println("postcontent "+postingLine);
-                    int tf = Integer.parseInt(parts[1]); // doc_id, tf, pointer
+                    float tf = Float.parseFloat(parts[1]); // doc_id, tf, pointer
                     long docPointer = Long.parseLong(parts[2]);
                     // Calculate IDF and term weight
                     double idf = calculateIDF(df, docsNumber); // You need to define totalDocuments
                     double termWeight = tf * idf;
-                    docFile.seek(docPointer);
-                    String docLine = docFile.readLine();
-                    String[] docParts = docLine.split(" ");
-                    long docId = Long.parseLong(docParts[0]);
 
                     // Accumulate the squares of term weights to calculate the document norm
                     double squaredTermWeight = Math.pow(termWeight, 2);
-                    double currentNorm = docNorms.getOrDefault(docPointer, 0.0);
+                    double currentNorm = docNorms.getOrDefault(docPointer, 0.0f);
                     double updatedNorm = currentNorm + squaredTermWeight;
 //                    System.out.println( docId +" UpdatedNorm "+ updatedNorm+ " Norm: " + currentNorm + " Term Weight: " + squaredTermWeight);
-                    docNorms.put(docPointer, updatedNorm);
+                    docNorms.put(docPointer,(float) updatedNorm);
                 }
             }
             postingFile.close();
@@ -549,6 +540,7 @@ public class pindexing {
     /* ---------------------------------------------------------------------------------- */
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         long startTime = System.currentTimeMillis();
+        Path directory = Paths.get("resources/if");
 
         // Create a ScheduledExecutorService that can schedule a task to run after a delay
         //ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
@@ -557,10 +549,11 @@ public class pindexing {
         //executor.schedule(() -> System.exit(0), 1, TimeUnit.MINUTES);
 
         try {
+            Object mutex = new Object();
+
             // Specify the directory path
-            Queue <String> docs_f = new LinkedList<>();
+
             String directoryPath = "resources/MiniCollection/";
-            int mergeCounter = 0;
 
             // Compute occurrences for directory
             compute_occurrences_for_directory(directoryPath);
@@ -585,55 +578,50 @@ public class pindexing {
 
             long midtime = System.currentTimeMillis();
             long MergeTime = midtime - ptime;
-            System.out.println("Merge execution time: " + MergeTime);
 
+            System.out.println("Merge execution time: " + MergeTime);
+            System.out.println("total merges " + mergeCounter);
             String vocabularyFilePath = "resources/if/VocabularyFile.txt";
             String postingFilePath = "resources/if/PostingFile.txt";
-            String docFilePath = "resources/if/DocumentsFile.txt";
+            String docFilePath = "resources/if/temp.txt";
             System.out.println("docsNumber: " + docsNumber);
             Map<String, term_data> vocab = loadVocabulary(vocabularyFilePath);
             long loadtime = System.currentTimeMillis();
             System.out.println("Vocabulary load time: " + (loadtime - midtime) + " milliseconds");
 
 
-            HashMap<Long, Double> hash_map = calculateNormForAllDocs(vocab, postingFilePath, docFilePath);
+            HashMap<Long, Float> hash_map = calculateNormForAllDocs(vocab, postingFilePath, docFilePath);
 
+
+            RandomAccessFile new_docFile = new RandomAccessFile("resources/if/DocumentsFile.txt", "rw");
             RandomAccessFile docFile = new RandomAccessFile(docFilePath, "rw");
-            //calculate root of the sum of the squares of the weights
-            for (Map.Entry<Long, Double> entry : hash_map.entrySet()) {
-                long docPointer = entry.getKey();
-                double docNorm = Math.sqrt(entry.getValue());
-                entry.setValue(docNorm);
+            long docPointer = 0;
+            String line = docFile.readLine();
 
-//                // Move to the position of docPointer in the file
-//                docFile.seek(docPointer);
-//
-//                // Read the existing line from the file
-//                String line = docFile.readLine();
-//
-//                // Append the docNorm value to the end of the line using String.format
-//                line = String.format("%s %s\n", line, docNorm);
-//
-//                // Clear the line by writing spaces
-//                docFile.seek(docPointer);
-//                for (int i = 0; i < line.length(); i++) {
-//                    docFile.writeByte(' ');
-//                }
-//
-//                // Move back to the position of docPointer and write the modified line
-//                docFile.seek(docPointer);
-//                docFile.writeBytes(line);
+            while(line!= null){
+                String[] parts = line.split(" ");
+                float docNorm = hash_map.get(docPointer);
+                double docNorm1 = Math.sqrt(docNorm);
+                new_docFile.writeBytes(String.format("%s %s %s\n", parts[0], parts[1], docNorm1));
+                docPointer = docFile.getFilePointer();
+                line = docFile.readLine();
             }
+
             docFile.close();
+            new_docFile.close();
+
+            File file = new File(docFilePath);
+            if(file.delete()){
+                System.out.println(docFilePath + " file deleted");
+            } else {
+                System.out.println("File " + docFilePath + " does not exist or failed to delete");
+            }
             long calcalation_time = System.currentTimeMillis();
             System.out.println("Calculation time: " + (calcalation_time - loadtime) + " milliseconds");
+
         } catch (IOException e) {
             e.printStackTrace();
-//        } catch (ExecutionException e) {
-////            throw new RuntimeException(e);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
+
         }
 
         long endTime = System.currentTimeMillis();
