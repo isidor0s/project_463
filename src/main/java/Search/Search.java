@@ -126,9 +126,15 @@ public class Search {
                     Scores.add("Score: ");
                     docsFile.seek(Long.parseLong(parts[2]));
                     String doc = docsFile.readLine();
-                    System.out.println("================Doc: "+doc);
-                    String[] docParts = doc.split(" ");
 
+
+                    String[] docParts = doc.split(" ");
+                    ;
+                    String numberConvertion= docParts[2].replace(",", ".");
+                    float dnorm = Float.parseFloat(numberConvertion);
+
+                    System.out.println("dnorm: "+dnorm);
+                    System.out.println("================Doc: "+doc+" "+dnorm);
                     Paths.add(docParts[1]);
                     /* -------------------------- */
                     System.out.println("The word '" + queryWord + "' appears in documents: " + postingList);
