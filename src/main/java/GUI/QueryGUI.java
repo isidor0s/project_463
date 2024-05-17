@@ -105,6 +105,7 @@ public class QueryGUI {
 
                 JButton button = new JButton(buttonText);
                 button.setHorizontalAlignment(SwingConstants.LEFT);
+
                 buttonPanel.add(button);
             }
         }
