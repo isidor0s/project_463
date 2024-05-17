@@ -101,7 +101,7 @@ public class Search {
         /*----------- No sorting ----------*/
         }else{
             RandomAccessFile postingFile = new RandomAccessFile(getPostingFileName(), "r");
-            RandomAccessFile docsFile = new RandomAccessFile(new File("resources/if/temp.txt"), "r");
+            RandomAccessFile docsFile = new RandomAccessFile(new File("resources/if/DocumentsFile.txt"), "r");
             /* load vocabulary */
 
             for( String queryWord : queryWords) {        // for each word of the QUERY

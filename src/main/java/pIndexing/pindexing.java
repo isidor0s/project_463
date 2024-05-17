@@ -8,6 +8,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -86,12 +87,12 @@ public class pindexing {
                     document doc = new document(); //Make a new document class
                     doc.setDocPointer(docFile.getFilePointer()); //pass file pointer of document txt
                     doc.setId(id);
-                    id++;
+
                     String Path = file.getAbsolutePath();
                     voc.getDocList().put(Path, doc);
 
-                    docFile.writeBytes(String.format("%s %s\n",id,file.getAbsolutePath())); //write the info to documents.txt
-
+                    docFile.writeBytes(String.format("%s %s 00.000000\n",id,file.getAbsolutePath())); //write the info to documents.txt //problem with the format of the float > 10.6f
+                    id++;
                     docsNumber++;
 
                     /* ------------------------ Partial Index Making ... -------------------------------- */
@@ -597,12 +598,15 @@ public class pindexing {
             RandomAccessFile docFile = new RandomAccessFile(docFilePath, "rw");
             long docPointer = 0;
             String line = docFile.readLine();
-
+            DecimalFormat dec = new DecimalFormat("#00.000000");
             while(line!= null){
                 String[] parts = line.split(" ");
                 float docNorm = hash_map.get(docPointer);
                 double docNorm1 = Math.sqrt(docNorm);
-                new_docFile.writeBytes(String.format("%s %s %s\n", parts[0], parts[1], docNorm1));
+//                System.out.println(docPointer);
+                long newpointer = new_docFile.getFilePointer();
+//                System.out.println("DocPointer: " + docPointer + " NewPointer: " + newpointer  + " DocNorm: " + docNorm1);
+                new_docFile.writeBytes(String.format("%s %s %s\n", parts[0], parts[1], dec.format(docNorm1)));
                 docPointer = docFile.getFilePointer();
                 line = docFile.readLine();
             }
