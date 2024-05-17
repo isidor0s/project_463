@@ -4,8 +4,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+import Doc_voc_data.term_data;
 import Search.Search;
+
+import static pIndexing.pindexing.loadVocabulary;
 
 public class QueryGUI {
     private JFrame frame;
@@ -18,9 +23,26 @@ public class QueryGUI {
     private int numResultButtons;
     private JPanel buttonPanel;
     private JScrollPane scrollPane;
+    private JCheckBox VSM_checkBox;
     private Search search;
+    private Boolean VSMflag;
+
+    private Map<String, term_data> LoadedVocab;
 
 
+    /**
+     * Function that checks the VSMflag flag
+     * @returns True when the flag is raised , False when it is no
+     */
+
+    public Boolean checkVSMflag(Boolean flag){
+        VSMflag = flag;
+        if(VSMflag==true){
+            return true;
+        }else{
+            return false;
+        }
+    }
     /**
      * Function that generates n * ResultButtons in the main area of the Display,
      * to showcase each individual file and its metrics ( filepath - snippet - score).
@@ -71,6 +93,15 @@ public class QueryGUI {
 
     public QueryGUI() {
         numResultButtons=0;
+        VSMflag = false;
+
+        /* Pre Load Vocabulary in Memory*/
+        try {
+            LoadedVocab = loadVocabulary("resources/if/VocabularyFile.txt");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         // Create the main frame
         frame = new JFrame("Query System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -92,6 +123,19 @@ public class QueryGUI {
         typeField = new JTextField(20);
         typeField.setBounds(70, 50, 300, 30);
 
+        // Create a checkbox for the ability to do VSM model analysis
+        VSM_checkBox = new JCheckBox();
+        VSM_checkBox.setText("Vector Space Model Analysis");
+        VSM_checkBox.setBounds(typeField.getBounds().x + typeField.getBounds().width + 10, typeField.getBounds().y, 200, 30);
+        VSM_checkBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // raise VSM flag
+                VSMflag = true;
+                search.setWithVSMflag(VSMflag);
+            }
+        });
+
         buttonPanel = new JPanel();
         buttonPanel.setLayout(new GridLayout(numResultButtons, 1)); // Set layout as grid with n rows and 1 column
         buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
@@ -111,7 +155,19 @@ public class QueryGUI {
                 // Display the results in the result area
                 search = new Search(LoadedVocab, "resources/if/PostingFile.txt", search.getWithVSMflag());
                 try {
-                    search.setNumResults(search.getTotalDf(query)[0]);
+                    int[] results_ofQuery = search.getTotalDf(query);
+                    /* e.g        Query = { cancer , book }        */
+                    /*-------------------------------------------- */
+                    /*  results_ofQuery = [ 18, 2 ]                */
+                    /*                                             */
+                    /*  allResults  =  18 + 2 =  20                */
+
+                    int allResults= 0;
+                    for(int j=0; j<results_ofQuery.length;j++){
+                        allResults = allResults + results_ofQuery[j];
+                    }
+
+                    search.setNumResults(allResults);
                     numResultButtons = search.getNumResults();
                     System.out.println("Number of results: " + numResultButtons);
 
@@ -119,6 +175,7 @@ public class QueryGUI {
                     throw new RuntimeException(ex);
                 }
                 try {
+
                     // Call the search method with the query
                     search.search(query);
                 } catch (IOException ioException) {
@@ -143,6 +200,7 @@ public class QueryGUI {
         frame.add(typeLabel);
         frame.add(typeField);
         frame.add(searchButton);
+        frame.add(VSM_checkBox);
         frame.add(resultArea);
 
         // Set the layout and make the frame visible

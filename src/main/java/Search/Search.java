@@ -28,6 +28,10 @@ public class Search {
     List<String> Snippets;              // correspond to the snippets of the results
     List<String> Scores;                // correspond to the scores of the results
 
+    List<String> Paths;
+    private Map<String, term_data> vocabulary;
+    Boolean withVSMflag = false;        // flag to determine if we need to do search with Vector Space Model or no
+
     /* ---------------------------- Getters ------------------------ */
     public String getVocabularyFileName() { return VocabularyFileName; }
     public String getPostingFileName() { return PostingFileName; }
@@ -36,6 +40,8 @@ public class Search {
     public List<String> getFileNames() { return FileNames; }
     public List<String> getSnippets() { return Snippets; }
     public List<String> getScores() { return Scores; }
+    public Boolean getWithVSMflag() { return withVSMflag; }
+    public List<String> getPaths() { return Paths; }
     /* ---------------------------- Setters ------------------------ */
 
     public void setPaths(List<String> paths) { Paths = paths;}
@@ -46,6 +52,7 @@ public class Search {
     public void setFileNames(List<String> fileNames) { FileNames = fileNames; }
     public void setSnippets(List<String> snippets) { Snippets = snippets; }
     public void setScores(List<String> scores) { Scores = scores; }
+    public void setWithVSMflag(Boolean flag){ withVSMflag = flag;}
     /* -------------------------- Constructors --------------------- */
     /**
      * Constructor
@@ -59,19 +66,17 @@ public class Search {
         this.FileNames = new ArrayList<>();
         this.Snippets = new ArrayList<>();
         this.Scores = new ArrayList<>();
+        this.Paths = new ArrayList<>();
+        this.withVSMflag = flag;
     }
     /*--------------------------------------------------------------------*/
 
     // test functions
-    public static List<String> performSearch(String query, String type) {
+    public static List<String> search_wtype(String query, String type) {
         // Implement your search logic here
         // Return a list of results
         return List.of("Result 1", "Result 2", "Result 3");
 
-    }
-    public static String performS(String query) {
-        // Perform the search with the given query
-        return "Results for query: \t" + query;
     }
 
     /**
