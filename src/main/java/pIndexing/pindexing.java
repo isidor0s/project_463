@@ -41,9 +41,9 @@ public class pindexing {
     static Queue<String> partialPostings = new LinkedList<>();  // Queue with partialPosting' names
     static int indexCount = 0;                                  // no use yet
     static RandomAccessFile docFile;                            // creates DocumentsFile.txt with the 3 important info - filename, filepath, tf*idf
-    static int docsNumber = 0; // number of documents in the collection
+    public static int docsNumber = 0; // number of documents in the collection
     static int start =0;
-    static int mergeCounter = 0;
+    public static int mergeCounter = 0;
     /* ------------------------------------------------------------------------------------------ */
     static {
         try {
@@ -537,8 +537,106 @@ public class pindexing {
             }
         }
     }
-
-    /* ---------------------------------------------------------------------------------- */
+//    public pindexing() {
+//        long startTime = System.currentTimeMillis();
+//        Path directory = Paths.get("resources/if");
+//
+//        // Create a ScheduledExecutorService that can schedule a task to run after a delay
+//        //ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+//
+//        // Schedule a task to shut down the JVM after 1 minute
+//        //executor.schedule(() -> System.exit(0), 1, TimeUnit.MINUTES);
+//
+//        try {
+//            Object mutex = new Object();
+//
+//            // Specify the directory path
+//
+//            String directoryPath = "resources/MiniCollection/";
+//
+//            // Compute occurrences for directory
+//            compute_occurrences_for_directory(directoryPath);
+//            createPartialIndex();
+//
+//            // Print out the number of partial indexes created
+//            System.out.println("Number of Partial Indexes: " + partialIndexes.size());
+//            long ptime= System.currentTimeMillis();
+//            long partial_time = ptime - startTime;
+//            System.out.println("Partial indexing execution time: " + partial_time );
+//            // Merge the partial indexes - every two indexes
+//            merge_function();
+//
+//            if (partialIndexes.size() == 1 && partialPostings.size() == 1) {
+//                new File(partialIndexes.poll()).renameTo(new File("resources/if/VocabularyFile.txt"));
+//                new File(partialPostings.poll()).renameTo(new File("resources/if/PostingFile.txt"));
+//            }
+//            //            //print items of each queue
+//            //            System.out.println("Partial Indexes: " + partialIndexes);
+//            //            System.out.println("Partial Postings: " + partialPostings);
+//
+//
+//            long midtime = System.currentTimeMillis();
+//            long MergeTime = midtime - ptime;
+//
+//            System.out.println("Merge execution time: " + MergeTime);
+//            System.out.println("total merges " + mergeCounter);
+//            String vocabularyFilePath = "resources/if/VocabularyFile.txt";
+//            String postingFilePath = "resources/if/PostingFile.txt";
+//            String docFilePath = "resources/if/temp.txt";
+//            System.out.println("docsNumber: " + docsNumber);
+//            Map<String, term_data> vocab = loadVocabulary(vocabularyFilePath);
+//            long loadtime = System.currentTimeMillis();
+//            System.out.println("Vocabulary load time: " + (loadtime - midtime) + " milliseconds");
+//
+//
+//            HashMap<Long, Float> hash_map = calculateNormForAllDocs(vocab, postingFilePath, docFilePath);
+//
+//
+//            RandomAccessFile new_docFile = new RandomAccessFile("resources/if/DocumentsFile.txt", "rw");
+//            RandomAccessFile docFile = new RandomAccessFile(docFilePath, "rw");
+//            long docPointer = 0;
+//            String line = docFile.readLine();
+//            DecimalFormat dec = new DecimalFormat("#00.000000");
+//            while(line!= null){
+//                String[] parts = line.split(" ");
+//                float docNorm = hash_map.get(docPointer);
+//                double docNorm1 = Math.sqrt(docNorm);
+//                //              import java.io.*;
+//
+//
+//                long newpointer = new_docFile.getFilePointer();
+//                //                System.out.println("DocPointer: " + docPointer + " NewPointer: " + newpointer  + " DocNorm: " + docNorm1);
+//                new_docFile.writeBytes(String.format("%s %s %s\n", parts[0], parts[1], dec.format(docNorm1)));
+//                docPointer = docFile.getFilePointer();
+//                line = docFile.readLine();
+//            }
+//
+//            docFile.close();
+//            new_docFile.close();
+//
+//            File file = new File(docFilePath);
+//            if(file.delete()){
+//                System.out.println(docFilePath + " file deleted");
+//            } else {
+//                System.out.println("File " + docFilePath + " does not exist or failed to delete");
+//            }
+//            long calcalation_time = System.currentTimeMillis();
+//            System.out.println("Calculation time: " + (calcalation_time - loadtime) + " milliseconds");
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//
+//        }
+//
+//        long endTime = System.currentTimeMillis();
+//        long elapsedTime = endTime - startTime;
+//        System.out.println("Total execution Time: " + elapsedTime);
+//    }
+//}
+    public void pindexing(){
+        // nothing
+    }
+/* ---------------------------------------------------------------------------------- */
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
         long startTime = System.currentTimeMillis();
         Path directory = Paths.get("resources/if");
@@ -603,7 +701,9 @@ public class pindexing {
                 String[] parts = line.split(" ");
                 float docNorm = hash_map.get(docPointer);
                 double docNorm1 = Math.sqrt(docNorm);
-//                System.out.println(docPointer);
+//              import java.io.*;
+
+
                 long newpointer = new_docFile.getFilePointer();
 //                System.out.println("DocPointer: " + docPointer + " NewPointer: " + newpointer  + " DocNorm: " + docNorm1);
                 new_docFile.writeBytes(String.format("%s %s %s\n", parts[0], parts[1], dec.format(docNorm1)));
@@ -631,5 +731,102 @@ public class pindexing {
         long endTime = System.currentTimeMillis();
         long elapsedTime = endTime - startTime;
         System.out.println("Total execution Time: " + elapsedTime);
+    }
+
+    public static void run_pindex(){
+        long startTime = System.currentTimeMillis();
+        Path directory = Paths.get("resources/if");
+
+        // Create a ScheduledExecutorService that can schedule a task to run after a delay
+        //ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
+        // Schedule a task to shut down the JVM after 1 minute
+        //executor.schedule(() -> System.exit(0), 1, TimeUnit.MINUTES);
+
+        try {
+            Object mutex = new Object();
+
+            // Specify the directory path
+
+            String directoryPath = "resources/MiniCollection/";
+
+            // Compute occurrences for directory
+            compute_occurrences_for_directory(directoryPath);
+            createPartialIndex();
+
+            // Print out the number of partial indexes created
+            System.out.println("Number of Partial Indexes: " + partialIndexes.size());
+            long ptime= System.currentTimeMillis();
+            long partial_time = ptime - startTime;
+            System.out.println("Partial indexing execution time: " + partial_time );
+            // Merge the partial indexes - every two indexes
+            merge_function();
+
+            if (partialIndexes.size() == 1 && partialPostings.size() == 1) {
+                new File(partialIndexes.poll()).renameTo(new File("resources/if/VocabularyFile.txt"));
+                new File(partialPostings.poll()).renameTo(new File("resources/if/PostingFile.txt"));
+            }
+//            //print items of each queue
+//            System.out.println("Partial Indexes: " + partialIndexes);
+//            System.out.println("Partial Postings: " + partialPostings);
+
+
+            long midtime = System.currentTimeMillis();
+            long MergeTime = midtime - ptime;
+
+            System.out.println("Merge execution time: " + MergeTime);
+            System.out.println("total merges " + mergeCounter);
+            String vocabularyFilePath = "resources/if/VocabularyFile.txt";
+            String postingFilePath = "resources/if/PostingFile.txt";
+            String docFilePath = "resources/if/temp.txt";
+            System.out.println("docsNumber: " + docsNumber);
+            Map<String, term_data> vocab = loadVocabulary(vocabularyFilePath);
+            long loadtime = System.currentTimeMillis();
+            System.out.println("Vocabulary load time: " + (loadtime - midtime) + " milliseconds");
+
+
+            HashMap<Long, Float> hash_map = calculateNormForAllDocs(vocab, postingFilePath, docFilePath);
+
+
+            RandomAccessFile new_docFile = new RandomAccessFile("resources/if/DocumentsFile.txt", "rw");
+            RandomAccessFile docFile = new RandomAccessFile(docFilePath, "rw");
+            long docPointer = 0;
+            String line = docFile.readLine();
+            DecimalFormat dec = new DecimalFormat("#00.000000");
+            while(line!= null){
+                String[] parts = line.split(" ");
+                float docNorm = hash_map.get(docPointer);
+                double docNorm1 = Math.sqrt(docNorm);
+//              import java.io.*;
+
+
+                long newpointer = new_docFile.getFilePointer();
+//                System.out.println("DocPointer: " + docPointer + " NewPointer: " + newpointer  + " DocNorm: " + docNorm1);
+                new_docFile.writeBytes(String.format("%s %s %s\n", parts[0], parts[1], dec.format(docNorm1)));
+                docPointer = docFile.getFilePointer();
+                line = docFile.readLine();
+            }
+
+            docFile.close();
+            new_docFile.close();
+
+            File file = new File(docFilePath);
+            if(file.delete()){
+                System.out.println(docFilePath + " file deleted");
+            } else {
+                System.out.println("File " + docFilePath + " does not exist or failed to delete");
+            }
+            long calcalation_time = System.currentTimeMillis();
+            System.out.println("Calculation time: " + (calcalation_time - loadtime) + " milliseconds");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+
+        }
+
+        long endTime = System.currentTimeMillis();
+        long elapsedTime = endTime - startTime;
+        System.out.println("Total execution Time: " + elapsedTime);
+
     }
 }

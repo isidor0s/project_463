@@ -6,7 +6,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.io.*;
 import Doc_voc_data.term_data;
 import Search.Search;
 
@@ -30,11 +30,19 @@ public class QueryGUI {
     private Map<String, term_data> LoadedVocab;
 
 
+
+    public static int countLines(String filename) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            int lines = 0;
+            while (reader.readLine() != null) lines++;
+            return lines;
+        }
+    }
+
     /**
      * Function that checks the VSMflag flag
      * @returns True when the flag is raised , False when it is no
      */
-
     public Boolean checkVSMflag(Boolean flag){
         VSMflag = flag;
         if(VSMflag==true){
@@ -78,11 +86,11 @@ public class QueryGUI {
             buttonPanel.add(button);
         }
 
-//JScrollBar vertical = new JScrollBar(JScrollBar.VERTICAL);
+        //JScrollBar vertical = new JScrollBar(JScrollBar.VERTICAL);
         scrollPane = new JScrollPane(buttonPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBounds(10,140, 760, numResultButtons * 80);
         scrollPane.setVisible(true);
-// Add the scrollPane to the layout
+        // Add the scrollPane to the layout
         frame.add(scrollPane, BorderLayout.CENTER);
 
 // Refresh the button panel
@@ -91,7 +99,7 @@ public class QueryGUI {
         frame.setVisible(true);
     }
 
-    public QueryGUI() {
+    public QueryGUI() throws IOException {
         numResultButtons=0;
         VSMflag = false;
 
@@ -139,8 +147,11 @@ public class QueryGUI {
         buttonPanel = new JPanel();
         buttonPanel.setLayout(new GridLayout(numResultButtons, 1)); // Set layout as grid with n rows and 1 column
         buttonPanel.setBounds(10, 140, 760, numResultButtons * 80); // Set bounds, adjust as per your requirement
-
-        search = new Search(LoadedVocab, "resources/if/PostingFile.txt", VSMflag);// Initialize the search object
+        /*----------------------------  SEARCH OBJECT -----------------------------*/
+        int docsNum = countLines("resources/if/DocumentsFile.txt");
+        System.out.println("---------------------------------------"+ docsNum);
+        search = new Search(LoadedVocab, "resources/if/PostingFile.txt", VSMflag,docsNum);// Initialize the search object
+        /*-------------------------------------------------------------------------*/
         // Create the search button
         searchButton = new JButton("Search");
         searchButton.setBounds(380, 10, 100, 30);
@@ -153,9 +164,9 @@ public class QueryGUI {
                 String result = "Results for query: \t" + query;
                 resultArea.setText(result);
                 // Display the results in the result area
-                search = new Search(LoadedVocab, "resources/if/PostingFile.txt", search.getWithVSMflag());
                 try {
                     int[] results_ofQuery = search.getTotalDf(query);
+
                     /* e.g        Query = { cancer , book }        */
                     /*-------------------------------------------- */
                     /*  results_ofQuery = [ 18, 2 ]                */
@@ -209,7 +220,7 @@ public class QueryGUI {
     }
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         new QueryGUI();
     }
 }
