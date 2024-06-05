@@ -120,13 +120,12 @@ public class QueryEditor {
      * -- Filters out stopwords
      *---------------------------------------------------------
      */
-    public void preprocessQuery(){
+    public void preprocessQuery( String[] words ){
         if(Query==null){
             System.out.println("Empty Query!");
             return;
         }
         // split the query into words
-        String[] words = Query.split(" ");
         numQueryWords = words.length;
 
         /* ----------- Remove duplicate words - Keep Unique ------------------ */
@@ -271,7 +270,7 @@ public class QueryEditor {
             String numberConvertion= docParts[2].replace(",", ".");
             float norma = Float.parseFloat(numberConvertion);
             double cos = multi_w / (norma * query_DistanceVector);
-            System.out.println("Doc: "+docParts[0]+"  Cosine Similarity: "+cos);
+            // System.out.println("Doc: "+docParts[0]+"  Cosine Similarity: "+cos);
             similarity.put(dpointer,cos);
         }
 
