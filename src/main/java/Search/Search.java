@@ -97,7 +97,9 @@ public class Search {
      * given the data collected in the QueryEditor class
      */
     public void updateResults(HashMap<Long,Double> doc_CosSim) throws IOException {
+
         RandomAccessFile docsFile = new RandomAccessFile("resources/if/DocumentsFile.txt", "r");
+        System.out.println("content of hasmap: "+ doc_CosSim.size());// IT WAS 0!!!
         for (Map.Entry<Long, Double> entry : doc_CosSim.entrySet()) {
 
             long dpointer = entry.getKey();     // pointer to doc
@@ -116,6 +118,7 @@ public class Search {
             Snippets.add("Snippet: .... ");
             Scores.add("Score: "+Score);
             Paths.add(FilePath);
+
         }
         // closes the file
         docsFile.close();
@@ -133,6 +136,7 @@ public class Search {
         setType(type);
 
         Boolean withVSM = getWithVSMflag();              // returns true if we need to do search with Vector Space Model or no
+        System.out.println("Search with VSM: "+withVSM);
         String[] queryWords = query.split(" ");     // Split the query into words
         // filter query words to remove punctuation inside
         for(int i=0; i<queryWords.length; i++){
@@ -153,11 +157,13 @@ public class Search {
         if( withVSM ){ // calc VSM weights on the query
             QueryEditor queryEditor = new QueryEditor(query,queryWords.length,NumDocs , vocabulary); // create editor on query
 
+            // build string with queryWords with " "
+
             // - [ PREPROCESSING ] --------------------------------------------------------
             //  Filter out Stopwords - Stemm - Keep uniqueWords
             //  sets list CleanedQuery_l with only the unique cleaned ^ words
             //  initializes the QueryWeights with the words of the query and 0.0f
-            queryEditor.preprocessQuery();
+            queryEditor.preprocessQuery(queryWords);
             // ----------------------------------------------------------------------------
             queryEditor.VSM();      // QueryWeights = { weights of each word of the Query }
             HashMap<String,Float> QueryWeights = queryEditor.getQueryWeights();
@@ -198,6 +204,7 @@ public class Search {
                 System.out.println("Relevant Docs: "+relevant_docs);
                 setNumResults(relevant_docs);
             }
+
             // store the results in the lists FileNames, Snippets, Scores, Paths
             updateResults( queryEditor.getDoc_CosSim() );
 
