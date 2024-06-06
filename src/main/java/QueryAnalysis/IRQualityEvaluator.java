@@ -104,6 +104,7 @@ public class IRQualityEvaluator {
                     if (qrels.get(parts[2]) != 0) {     // RELEVANT ! --- RELEVANCE SCORE 1 , 2
                         relevant_retrieved++;
                         dcg = dcg + qrels.get(parts[2])/ (Math.log(retrieved + 1)/Math.log(2)); // DCG
+
                         bpref += irrelevant_retrieved;  // | n ranked higher than r | in this position plus all the previous
                         precision_i = precision_i + (relevant_retrieved / retrieved ) ; // summing all the precision_i
                     } else {
@@ -121,8 +122,13 @@ public class IRQualityEvaluator {
             }
             if(relevant_retrieved>0){
 
-                System.out.println("relevant_retrieved: "+relevant_retrieved + " irrelevant_retrieved: "+irrelevant_retrieved);
-                bpref = (relevant_retrieved-(bpref/relevant_retrieved))/relevant_retrieved; // 1/R * Σ_ r ( 1 - | n ranked higher than r | ) / min(R,N)
+                System.out.println(i+" relevant: "+relevant_retrieved + " irrelevant: "+irrelevant_retrieved);
+                if(relevant_retrieved>irrelevant_retrieved){
+                    bpref = (relevant_retrieved-(bpref/irrelevant_retrieved))/relevant_retrieved; // 1/R * Σ_ r ( 1 - | n ranked higher than r | ) / min(R,N)
+                }else{
+                    bpref = (relevant_retrieved-(bpref/relevant_retrieved))/relevant_retrieved;
+                }
+                ; // 1/R * Σ_ r ( 1 - | n ranked higher than r | ) / min(R,N)
                 aveP = precision_i / relevant_retrieved; // aveP is the sum calculated of all the precision_i
                 idcg = dcg / idcg;
 //                System.out.println("aveP: "+aveP+" test "+ precision_i/(number1_scores+number2_scores));

@@ -16,8 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import Doc_voc_data.term_data;
-import pIndexing.pindexing;
-import static orgg.thread_example.mergeBOTHPartials;
+
 import static pIndexing.pindexing.*;
 
 public class DirectorySelector extends JFrame {
