@@ -113,7 +113,7 @@ public class IRQualityEvaluator {
                 }
             }
             double idcg = 0;
-            for(int j = 1; j<=relevant_retrieved; j++){ // ideal dcg, cutted based on the number of relevant docs we found between (results and qrels) we don't care about not judged 
+            for(int j = 1; j<=relevant_retrieved; j++){ // ideal dcg, cutted based on the number of relevant docs we found between (results and qrels) we don't care about not judged
                 if(j <= number2_scores){
                     idcg = idcg + 2/ (Math.log(j + 1)/Math.log(2)); // DCG
                 }else {
@@ -122,21 +122,22 @@ public class IRQualityEvaluator {
             }
             if(relevant_retrieved>0){
 
-                System.out.println(i+" relevant: "+relevant_retrieved + " irrelevant: "+irrelevant_retrieved);
+//                System.out.println(i+" relevant: "+relevant_retrieved + " irrelevant: "+irrelevant_retrieved);
                 if(relevant_retrieved>irrelevant_retrieved){
                     bpref = (relevant_retrieved-(bpref/irrelevant_retrieved))/relevant_retrieved; // 1/R * Σ_ r ( 1 - | n ranked higher than r | ) / min(R,N)
                 }else{
                     bpref = (relevant_retrieved-(bpref/relevant_retrieved))/relevant_retrieved;
                 }
-                ; // 1/R * Σ_ r ( 1 - | n ranked higher than r | ) / min(R,N)
+                // 1/R * Σ_ r ( 1 - | n ranked higher than r | ) / min(R,N)
                 aveP = precision_i / relevant_retrieved; // aveP is the sum calculated of all the precision_i
                 idcg = dcg / idcg;
-//                System.out.println("aveP: "+aveP+" test "+ precision_i/(number1_scores+number2_scores));
+
             }else{
                 bpref = 0;
                 aveP = 0;
                 idcg = 0;
             }
+            System.out.println("Topic: "+i+" bpref: "+bpref+" aveP: "+aveP+" idcg: "+idcg);
             writeEvalResultsFile(i,  bpref, aveP, idcg, "1");
         }
 
@@ -148,14 +149,13 @@ public class IRQualityEvaluator {
         Map<String, Integer> qrels = new HashMap<>();
 
             String line;
-            int counter =0;
+
             while ((line = filename.readLine()) != null && Integer.valueOf(line.split("\t")[0]) == topicNo){
                 String[] parts = line.split("\t");
                 String topic = parts[0];
                 String docId = parts[2];
                 int score = Integer.parseInt(parts[3]);
-                counter++;
-//                System.out.println(counter+" Topic: "+topicNo+" docid "+docId+" score "+score);
+
                 if(score == 2) {
                     number2_scores++;
                 }
@@ -168,31 +168,6 @@ public class IRQualityEvaluator {
                 qrels.put(docId, score);
             }
         return qrels;
-    }
-    // testing the class and its functions
-
-    public static void main(String[] args) {
-        IRQualityEvaluator irQualityEvaluator = new IRQualityEvaluator();
-        try {
-            File file = new File("resources/eval_results.txt"); // replace with your file path
-
-            if (file.exists()) {
-                boolean result = file.delete();
-
-                if(result) {
-                    System.out.println("File deleted successfully");
-                } else {
-                    System.out.println("Failed to delete the file");
-                }
-            } else {
-                System.out.println("File does not exist");
-            }
-//            irQualityEvaluator.readTopicsXML(0);
-            irQualityEvaluator.calculate_metrics();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -236,5 +211,66 @@ public class IRQualityEvaluator {
 
         bufferedWriter.write(topicNo + "\t" + bpref + "\t" + avep + "\t" + ndcg + "\t" + run_name + "\n");
         bufferedWriter.close();
+    }
+
+    /**
+     * Function that sorts the results of the run so that we have data sorted
+     * in ascending order given the topicsNo
+     * @throws IOException throws exc
+     */
+    public static void sortResultsFile() throws IOException {
+        // read results from file (1st column)
+        BufferedReader results_file = new BufferedReader(new FileReader("resources/results.txt"));
+        List<String[]> lines = new ArrayList<>();
+
+        String line;
+        while ((line = results_file.readLine()) != null) {
+            String[] parts = line.split("\t");
+            lines.add(parts);
+        }
+        results_file.close();
+
+        // Sort lines based on the topic_no
+        lines.sort(Comparator.comparingInt(a -> Integer.parseInt(a[0])));
+
+        // write the sorted lines back to a new file
+        BufferedWriter writer = new BufferedWriter(new FileWriter("resources/results_sorted.txt"));
+        for (String[] parts : lines) {
+            writer.write(String.join("\t", parts));
+            writer.newLine();
+        }
+        writer.close();
+    }
+
+
+    // testing the class and its functions
+
+    public static void main(String[] args) {
+//        try {
+//            sortResultsFile();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+        IRQualityEvaluator irQualityEvaluator = new IRQualityEvaluator();
+        try {
+            File file = new File("resources/eval_results.txt"); // replace with your file path
+
+            if (file.exists()) {
+                boolean result = file.delete();
+
+                if(result) {
+                    System.out.println("File deleted successfully");
+                } else {
+                    System.out.println("Failed to delete the file");
+                }
+            } else {
+                System.out.println("File does not exist");
+            }
+//            irQualityEvaluator.readTopicsXML(0);
+            irQualityEvaluator.calculate_metrics();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
