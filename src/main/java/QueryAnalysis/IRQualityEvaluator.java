@@ -3,9 +3,7 @@ package QueryAnalysis;
 import gr.uoc.csd.hy463.Topic;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 import static gr.uoc.csd.hy463.TopicsReader.readTopics;
 
@@ -26,6 +24,10 @@ import static gr.uoc.csd.hy463.TopicsReader.readTopics;
  * (e.g. in the weighting of the index, in the query processor, in the relevance score calculation function, etc.)
  */
 public class IRQualityEvaluator {
+
+    static int number2_scores = 0;
+    static int number1_scores = 0;
+    static int number0_scores = 0;
 
     /**
      * Function that will read the topics file (nxml) of the evaluation collection
@@ -62,28 +64,141 @@ public class IRQualityEvaluator {
     }
 
     public void calculate_metrics() throws IOException {
-        BufferedReader qrels_file = new BufferedReader(new FileReader("qrels.txt"));
-        BufferedReader results_file = new BufferedReader(new FileReader("results.txt"));
-        BufferedWriter eval_file = new BufferedWriter(new FileWriter("eval_results.txt"));
+        BufferedReader qrels_file = new BufferedReader(new FileReader("resources/qrels.txt"));
+        BufferedReader results_file = new BufferedReader(new FileReader("resources/results_sorted.txt"));
+
 
         for(int i=1; i<=30; i++){
+            number1_scores = 0;
+            number2_scores = 0;
+            Map<String,Integer> qrels =  loadQrels(qrels_file, i);
 
+            double relevant_retrieved = 0;
+            double irrelevant_retrieved = 0;
+
+            double bpref = 0;
+            double precision_i = 0;
+            double aveP = 0;
+            double dcg = 0;
+            int retrieved = 1;          // just retrieved docs
+            String line;
+
+            // ################################################################################################
+            // #  bpref   =   1/R    *    Σ_ r  (  ( 1  -  |  n ranked higher than r |  )/  min (R,N)    )
+            // #
+            // #       R        - Relevant Retrieved
+            // #       N        - Non-Relevant Retrieved
+            // #       r        - a Relevant retrieved doc
+            // #       n        - a Non-Relevant retrieved doc
+            // #       Σ_r      - happens r times ( r - number of relevant documents )
+            // #       min(R,N) - finds which Set is smaller R or N
+            // ################################################################################################
+
+            while((line = results_file.readLine()) != null && Integer.parseInt(line.split("\t")[0]) == i){
+                String[] parts = line.split("\t");
+
+                if(qrels.containsKey(parts[2])) {       // the file exists
+
+                    retrieved ++;                       // moved pos - read a doc
+
+                    if (qrels.get(parts[2]) != 0) {     // RELEVANT ! --- RELEVANCE SCORE 1 , 2
+                        relevant_retrieved++;
+                        dcg = dcg + qrels.get(parts[2])/ (Math.log(retrieved + 1)/Math.log(2)); // DCG
+                        bpref += irrelevant_retrieved;  // | n ranked higher than r | in this position plus all the previous
+                        precision_i = precision_i + (relevant_retrieved / retrieved ) ; // summing all the precision_i
+                    } else {
+                        irrelevant_retrieved++;
+                    }
+                }
+            }
+            double idcg = 0;
+            for(int j = 1; j<=relevant_retrieved; j++){ // ideal dcg, cutted based on the number of relevant docs we found between (results and qrels) we don't care about not judged 
+                if(j <= number2_scores){
+                    idcg = idcg + 2/ (Math.log(j + 1)/Math.log(2)); // DCG
+                }else {
+                    idcg = idcg + 1/ (Math.log(j + 1)/Math.log(2)); // DCG
+                }
+            }
+            if(relevant_retrieved>0){
+
+                System.out.println("relevant_retrieved: "+relevant_retrieved + " irrelevant_retrieved: "+irrelevant_retrieved);
+                bpref = (relevant_retrieved-(bpref/relevant_retrieved))/relevant_retrieved; // 1/R * Σ_ r ( 1 - | n ranked higher than r | ) / min(R,N)
+                aveP = precision_i / relevant_retrieved; // aveP is the sum calculated of all the precision_i
+                idcg = dcg / idcg;
+//                System.out.println("aveP: "+aveP+" test "+ precision_i/(number1_scores+number2_scores));
+            }else{
+                bpref = 0;
+                aveP = 0;
+                idcg = 0;
+            }
+            writeEvalResultsFile(i,  bpref, aveP, idcg, "1");
         }
 
+        qrels_file.close();
+        results_file.close();
     }
 
+    private static Map<String,Integer> loadQrels(BufferedReader filename, int topicNo) throws IOException {
+        Map<String, Integer> qrels = new HashMap<>();
 
+            String line;
+            int counter =0;
+            while ((line = filename.readLine()) != null && Integer.valueOf(line.split("\t")[0]) == topicNo){
+                String[] parts = line.split("\t");
+                String topic = parts[0];
+                String docId = parts[2];
+                int score = Integer.parseInt(parts[3]);
+                counter++;
+//                System.out.println(counter+" Topic: "+topicNo+" docid "+docId+" score "+score);
+                if(score == 2) {
+                    number2_scores++;
+                }
+                else if(score == 1) {
+                    number1_scores++;
+                }
+                else if(score == 0) {
+                    number0_scores++;
+                }
+                qrels.put(docId, score);
+            }
+        return qrels;
+    }
     // testing the class and its functions
 
     public static void main(String[] args) {
         IRQualityEvaluator irQualityEvaluator = new IRQualityEvaluator();
         try {
-            irQualityEvaluator.readTopicsXML(0);
+            File file = new File("resources/eval_results.txt"); // replace with your file path
+
+            if (file.exists()) {
+                boolean result = file.delete();
+
+                if(result) {
+                    System.out.println("File deleted successfully");
+                } else {
+                    System.out.println("Failed to delete the file");
+                }
+            } else {
+                System.out.println("File does not exist");
+            }
+//            irQualityEvaluator.readTopicsXML(0);
+            irQualityEvaluator.calculate_metrics();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Function that will write the results of the search in a file named "results.txt"
+     * @param topicNo - the number of the topic
+     * @param q0  - standard
+     * @param pmcid - the name of the file
+     * @param rank - the rank of the document
+     * @param score - the score of the document
+     * @param run_name - the name of the run
+     * @throws IOException - if the file is not found
+     */
     public void writeResultsFile(int topicNo, int q0, String pmcid, int rank, String score, String run_name) throws IOException {
         // Buffered Reader "results.txt" - open file with w+
         FileWriter fileWriter = new FileWriter("resources/results.txt", true);
@@ -98,8 +213,22 @@ public class IRQualityEvaluator {
         bufferedWriter.close();
     }
 
+    /**
+     * Function that will write the evaluation results in a file named "eval_results.txt"
+     * @param topicNo  - the number of the topic
+     * @param bpref - the bpref value
+     * @param avep - the avep value
+     * @param ndcg - the ndcg value
+     * @param run_name - the name of the run
+     * @throws IOException - if the file is not found
+     */
+    public void writeEvalResultsFile(int topicNo , double bpref, double avep, double ndcg, String run_name) throws IOException {
+        // Buffered Reader "eval_results.txt" - open file with w+
+        FileWriter fileWriter = new FileWriter("resources/eval_results.txt", true);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        // TOPIC_NO BPREF_VALUE AVEP_VALUE NDCG_VALUE
 
-    public void calculateMetrics(int topicNo) {
-
+        bufferedWriter.write(topicNo + "\t" + bpref + "\t" + avep + "\t" + ndcg + "\t" + run_name + "\n");
+        bufferedWriter.close();
     }
 }

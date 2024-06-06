@@ -35,4 +35,38 @@ public class measures {
 
         return calculate_dcg(relevanceScores, size);
     }
+
+
+    /**
+     * Function that will calculate the Average Precision value
+     * @param qrelsComponents - the components of the qrels file
+     * @param resultsComponents - the components of the results file
+     * @return
+     */
+    public double calculateAVEP(String[] qrelsComponents, String[] resultsComponents) {
+
+        //  mean of the precisions for each postition
+        // -----------------------------------------------
+        // aveP = 1/R * Σ isrel(r)P(r)
+        //  where,
+        //      isrel (r) --> 0 /1
+        // -----------------------------------------------
+
+        double sumOfPrecisions = 0.0;
+        int numberOfRelevantDocuments = 0;
+        int totalNumberOfDocuments = resultsComponents.length;
+
+        // Assuming that the relevance score is in the fourth position of the qrelsComponents array
+        int relevanceScore = Integer.parseInt(qrelsComponents[3]);
+
+        // If the document is relevant
+        if (relevanceScore > 0) {
+            numberOfRelevantDocuments++;
+            sumOfPrecisions += (double) numberOfRelevantDocuments / totalNumberOfDocuments;
+        }
+        // Calculate AVEP
+        double avepValue = sumOfPrecisions / numberOfRelevantDocuments;
+        return avepValue;
+    }
+
 }
