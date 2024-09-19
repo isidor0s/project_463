@@ -116,8 +116,5 @@ The system includes tools for evaluating search results against a set of relevan
 - **BioReader.jar** and **Stemmer.jar** must be included in the classpath for successful execution.
 - Ensure that the provided stopword lists (`stopwordsEn.txt`, `stopwordsGr.txt`) are correctly configured.
 
-## License
-
-This project is developed for the **HY463 - Information Retrieval** course as part of an academic project. It is intended for educational purposes only.
 
 
