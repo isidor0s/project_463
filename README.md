@@ -1,117 +1,124 @@
-HY463 - Information Retrieval Project
+---
 
-This repository contains the source code and necessary files for the HY463 - Information Retrieval course project.
-The project involves implementetion of inverted file structure using the method of partial indexing for big Data collection similar to the /Resources/MiniCollection
-and utilizing the create IF for search. It also includes evaluation of the system and the results 
+# HY463 - Information Retrieval Project
 
+This repository contains the source code and necessary files for the **HY463 - Information Retrieval** course project. The project involves implementing an **inverted file structure** using the method of **partial indexing** for handling large data collections, similar to the sample collection provided in `/Resources/MiniCollection`. The created inverted file (IF) is then utilized for performing searches on the dataset. Additionally, the project includes evaluation mechanisms to assess the performance of the system and analyze the search results.
 
-#######################################################
-STRUCTURE of the project should remain as is
-#######################################################
+## Project Structure
 
-    -- libs
-    |_________ BioReader.jar
-    |_________ Stemmer.jar
-    -- out
-    -- artifacts
-    -- resources
-    |_________ CollectionIndex
-    |_________ if
-                |_________ PostingFile.txt
-                |_________ VocabularyFile.txt
-                |_________ temp.txt
-                |_________ DocumentsFile.txt
-    |_________ MiniCollection
-    |_________ Stemming
-    |_________ Stopwords
-                |_________ stopwordsEn.txt
-                |_________ stopwordsGr.txt
-    - eval_results.txt
-    - qrels.txt
-    - results.txt
-    - results_sorted.txt
-    - topics.xml
-    -- src
-    |_________ main
-                |_________ java
-                            |_________ Doc_voc_data
-                                          |_________ document.java
-                                          |_________ term_data.java
-                                          |_________ utilities.java
-                                          |_________ Vocabulary.java
-                            |_________ GUI
-                                          |_________ DirectorySelector.java
-                                          |_________ QueryGUI.java
-                            |_________ pIndexing
-                                          |_________ pindexing.java
-                            |_________ QueryAnalysis
-                                          |_________ IRQualityEvaluator.java- measures.java
-                                          |_________ QueryEditor.java
-                                          |_________  QuerySenderGUI.java
-                            |_________ Search
-                                          |_________ Search.java
-                            |_________ Stemmming
-                                          |_________ Stemming.java
+```
+-- libs
+   |_________ BioReader.jar
+   |_________ Stemmer.jar
+-- out
+-- artifacts
+-- resources
+   |_________ CollectionIndex
+   |_________ if
+               |_________ PostingFile.txt
+               |_________ VocabularyFile.txt
+               |_________ temp.txt
+               |_________ DocumentsFile.txt
+   |_________ MiniCollection
+   |_________ Stemming
+   |_________ Stopwords
+               |_________ stopwordsEn.txt
+               |_________ stopwordsGr.txt
+- eval_results.txt
+- qrels.txt
+- results.txt
+- results_sorted.txt
+- topics.xml
+-- src
+   |_________ main
+               |_________ java
+                             |_________ Doc_voc_data
+                                           |_________ document.java
+                                           |_________ term_data.java
+                                           |_________ utilities.java
+                                           |_________ Vocabulary.java
+                             |_________ GUI
+                                           |_________ DirectorySelector.java
+                                           |_________ QueryGUI.java
+                             |_________ pIndexing
+                                           |_________ pindexing.java
+                             |_________ QueryAnalysis
+                                           |_________ IRQualityEvaluator.java
+                                           |_________ measures.java
+                                           |_________ QueryEditor.java
+                                           |_________ QuerySenderGUI.java
+                             |_________ Search
+                                           |_________ Search.java
+                             |_________ Stemming
+                                           |_________ Stemming.java
+```
 
-################################################################
+### Key Directories and Files
 
-Key Files
+- **libs/**: Contains essential libraries like `BioReader.jar` and `Stemmer.jar` required for reading biological data and stemming, respectively.
+- **resources/**: Contains collections and important files for indexing and searching, such as the `MiniCollection`, stopword lists, and the inverted file components (`VocabularyFile.txt`, `PostingFile.txt`, etc.).
+- **src/main/java/**: The main source folder with the Java code divided into packages for indexing, searching, stemming, and evaluation.
+- **results.txt, results_sorted.txt**: Store search results and their sorted versions.
+- **eval_results.txt**: Contains the evaluation of the search engine's performance using precision and recall metrics.
 
-    libs/BioReader.jar: Contains pre-built classes used for bio-data reading (provided from course).
-    libs/Stemmer.jar: Used for word stemming operations (provided from course).
-    resources/CollectionIndex: Stores indexes of the document collection.
-    resources/if/: Contains important indexing and vocabulary files.
-    resources/Stopwords/: Stopword files for English and Greek, used to filter out common words during indexing and searching.
+## How to Run the Project
 
-How to Run the Project
-Option 1: Run with Command Line
+### Option 1: Run via Command Line
 
-    Navigate to the folder where the project is located.
+1. Open the terminal and navigate to the project directory.
+2. Use the following command to execute the project using the `java` command:
 
-    Run the following command to execute the .jar file:
+   ```bash
+   C:\Users\< YOUR_USERNAME >\.jdks\openjdk-22\bin\java.exe -jar project_463.jar
+   ```
 
-    bash
+   Make sure to replace `< YOUR_USERNAME >` with your actual username.
 
-    C:\Users\< YOUR_USERNAME >\.jdks\openjdk-22\bin\java.exe -jar project_463.jar
+### Option 2: Run via IDE
 
-    Replace < YOUR_USERNAME > with your actual username.
+1. Open the project in your preferred Java IDE (such as IntelliJ IDEA or Eclipse).
+2. Inside the IDE, run the following classes:
 
-Option 2: Run via IDE
+   - **`QuerySenderGUI.main`**: Provides a GUI for sending search queries.
+   - **`IRQualityEvaluator.main`**: Evaluates the quality of the search engine's results based on predefined metrics.
 
-    Open the project_463.zip in your preferred Java IDE (such as IntelliJ IDEA or Eclipse).
+### Notes
+- The project requires Java 8+ for successful execution.
+- Ensure the project structure remains intact, including all resources and libraries.
 
-    Locate and run the following classes inside the IDE:
-        QuerySenderGUI.main: GUI to send queries for testing and evaluation. There is also option to select also a folder for indexing. 
-        IRQualityEvaluator.main: Evaluates the quality of the search results.
+## Project Description
 
-Notes
+The project centers around building an inverted file (IF) structure to efficiently index and search large document collections. This is achieved using **partial indexing**, which handles large datasets by breaking the indexing process into manageable segments. The project workflow includes:
 
-    Make sure that the project structure and resources remain intact for successful execution.
-    The libraries provided in the libs/ folder are essential for the functionality of the project.
+1. **Indexing**: The `pindexing.java` class is responsible for creating the inverted file structure, consisting of:
+   - **Vocabulary File**: A list of terms extracted from the document collection.
+   - **Posting File**: Stores the document IDs and positions for each term.
+2. **Search**: The `Search.java` class uses the inverted file to search for documents that match a given query.
+3. **Stemming**: The `Stemming.java` class ensures that different forms of the same word are treated as equivalent by reducing words to their root forms.
+4. **Stopword Removal**: Common words like "the" or "and" are removed from the indexing and search processes to enhance efficiency.
+5. **Evaluation**: The `IRQualityEvaluator.java` class evaluates the search engine's results using metrics such as precision and recall, based on relevance judgments in `qrels.txt`.
 
-Project Description
+### MiniCollection
 
-This project is focused on Information Retrieval (IR) and aims to evaluate the performance of a search engine using custom indexing, stemming, and query processing techniques. The project includes a GUI for sending queries and receiving results, along with tools for evaluating the precision and recall of these results.
-Core Components
+The project uses a **MiniCollection** as a sample dataset for indexing and search. This collection simulates the process of handling larger document collections through partial indexing.
 
-    Document & Term Data: Doc_voc_data contains Java classes for representing documents, terms, and utilities related to vocabulary processing.
-    Query GUI: The QueryGUI class in the GUI package allows for user interaction to send queries and display results.
-    Indexing: The pindexing.java class in the pIndexing package handles the indexing of the document collection.
-    Stemming: The Stemming.java class provides functionality to perform word stemming during the indexing and search phases.
-    Search: The Search.java class is responsible for searching through the indexed documents to return relevant results based on the queries.
-    Evaluation: The IRQualityEvaluator.java and measures.java provide methods for evaluating the quality of search results using standard IR metrics such as precision and recall.
+## Evaluation
 
-Evaluation
+The system includes tools for evaluating search results against a set of relevance judgments. After a set of queries is executed, results are generated in `results.txt` and can be compared to the ground truth in `qrels.txt`.
 
-The project provides mechanisms to evaluate the quality of search results using the provided qrels.txt and results.txt. After running a set of queries, results are evaluated, and you can see sorted results in results_sorted.txt.
-Files:
+### Key Files for Evaluation:
+- **eval_results.txt**: Stores the evaluation output after running the IR system.
+- **qrels.txt**: Contains relevance judgments for each query.
+- **topics.xml**: A set of predefined queries used for testing and evaluation.
 
-    eval_results.txt: Stores the evaluation results.
-    qrels.txt: Relevance judgments for evaluating search engine output.
-    topics.xml: Contains a set of topics (queries) used to evaluate the system.
+## Requirements
 
-Requirements
+- **Java Development Kit (JDK) 8 or higher**.
+- **BioReader.jar** and **Stemmer.jar** must be included in the classpath for successful execution.
+- Ensure that the provided stopword lists (`stopwordsEn.txt`, `stopwordsGr.txt`) are correctly configured.
 
-    Java 8+ is required to compile and run the project.
-    Libraries from the libs/ folder must be included in the project classpath.
+## License
 
+This project is developed for the **HY463 - Information Retrieval** course as part of an academic project. It is intended for educational purposes only.
+
+---
