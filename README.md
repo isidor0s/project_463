@@ -3,6 +3,8 @@ HY463 - Information Retrieval Project
 This repository contains the source code and necessary files for the HY463 - Information Retrieval course project.
 The project involves implementetion of inverted file structure using the method of partial indexing for big Data collection similar to the /Resources/MiniCollection
 and utilizing the create IF for search. It also includes evaluation of the system and the results 
+
+
 #######################################################
 STRUCTURE of the project should remain as is
 #######################################################
