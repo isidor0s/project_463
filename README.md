@@ -1,17 +1,51 @@
------------------------------------------
-for monday:
------------------------------------------
 
-  ## POSTING FILE creation
+#######################################################
 
-1) make a **raf Voc**
-2) write the content of the Vocabulary file into the **raf Voc**. 
+STRUCTURE of the project should remain as is
+#######################################################
 
-3) read from the **raf Voc** , each term 
-  4) get the term's *vocabulary list* and its *Doc_TF*
-  5) make a **raf Post**
-  6) write each doc_id of the vocabulary list in a line of the **raf Post**
-  7) next to it add its tf
-  8) next to it add its pos
+    -- libs
+    |_________ BioReader.jar
+    |_________ Stemmer.jar
+    -- out
+    -- artifacts
+    -- resources
+    |_________ CollectionIndex
+    |_________ if
+                |_________ PostingFile.txt
+                |_________ VocabularyFile.txt
+                |_________ temp.txt
+                |_________ DocumentsFile.txt
+    |_________ MiniCollection
+    |_________ Stemming
+    |_________ Stopwords
+                |_________ stopwordsEn.txt
+                |_________ stopwordsGr.txt
+    - eval_results.txt
+    - qrels.txt
+    - results.txt
+    - results_sorted.txt
+    - topics.xml
+    -- src
+    |_________ main
+                |_________ java
+                            |_________ Doc_voc_data
+                                          |_________ document.java
+                                          |_________ term_data.java
+                                          |_________ utilities.java
+                                          |_________ Vocabulary.java
+                            |_________ GUI
+                                          |_________ DirectorySelector.java
+                                          |_________ QueryGUI.java
+                            |_________ pIndexing
+                                          |_________ pindexing.java
+                            |_________ QueryAnalysis
+                                          |_________ IRQualityEvaluator.java- measures.java
+                                          |_________ QueryEditor.java
+                                          |_________  QuerySenderGUI.java
+                            |_________ Search
+                                          |_________ Search.java
+                            |_________ Stemmming
+                                          |_________ Stemming.java
 
-  9) next to it add the offset/doc number == right line of the DocumentFile.txt 
+################################################################
